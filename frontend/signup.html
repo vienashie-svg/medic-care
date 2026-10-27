@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" data-guest-only>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="sig.doctitle">Medic Care | Sign Up</title>
+    <script src="auth.js"></script>
+    <script src="languages.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(
+                to bottom,
+                #ffffff 0%,
+                #edf4fd 35%,
+                #d5e5fa 70%,
+                #bdd5f3 100%
+            );
+            color: #111827;
+        }
+
+        .signup-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px 18px;
+        }
+
+        .signup-form {
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .signup-form h1 {
+            font-size: 25px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #586273;
+            margin-bottom: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        .form-group input {
+            width: 100%;
+            height: 43px;
+            padding: 0 14px;
+            border: 1px solid #78869b;
+            border-radius: 25px;
+            background: transparent;
+            font-size: 12px;
+            color: #111827;
+            outline: none;
+        }
+
+        .form-group input::placeholder {
+            color: #78869b;
+        }
+
+        .form-group input:focus {
+            border-color: #1675b7;
+            box-shadow: 0 0 0 2px #1675b726;
+        }
+
+        .create-button {
+            display: block;
+            margin: 22px auto 0;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            background: #1675b7;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .create-button:hover {
+            background: #105d96;
+        }
+
+        .login-link {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 18px;
+        }
+
+        .login-link a {
+            color: #245b9b;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media screen and (max-width: 480px) {
+            .signup-form {
+                max-width: 340px;
+            }
+
+            .signup-form h1 {
+                font-size: 23px;
+            }
+        }
+
+        .msg {
+            color: #c0182b;
+            font-size: 11px;
+            min-height: 14px;
+            margin: 5px 0 0 14px;
+        }
+
+        .form-group input.invalid {
+            border-color: #c0182b;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="signup-container">
+        <form class="signup-form" id="signupForm" novalidate>
+            <h1 data-i18n="sig.h1">Create your account</h1>
+            <p class="subtitle" data-i18n="sig.sub">Let's get started!</p>
+
+            <div class="form-group">
+                <label for="fullName" data-i18n="prof.name">Full Name</label>
+                <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    placeholder="Enter your full name" data-i18n-ph="prof.ph.name"
+                    autocomplete="name"
+                    maxlength="200"
+                    required
+                >
+                <div class="msg" id="nameMsg"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="email" data-i18n="sig.id">Email or Phone Number</label>
+                <input
+                    type="text"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email or phone number" data-i18n-ph="sig.id.ph"
+                    autocomplete="username"
+                    required
+                >
+                <div class="msg" id="idMsg"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="password" data-i18n="sig.pw">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Create your password" data-i18n-ph="sig.pw.ph"
+                    autocomplete="new-password"
+                    required
+                >
+                <div class="msg" id="pwMsg"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword" data-i18n="sig.cf">Confirm Password</label>
+                <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Confirm your password" data-i18n-ph="sig.cf.ph"
+                    autocomplete="new-password"
+                    required
+                >
+                <div class="msg" id="cfMsg"></div>
+            </div>
+
+            <button type="submit" class="create-button" id="submitBtn" data-i18n="sig.btn">
+                Create Account
+            </button>
+
+            <p class="login-link">
+                <span data-i18n="sig.have">Already have an account?</span>
+                <a href="index.html" data-i18n="sig.login">Log In</a>
+            </p>
+        </form>
+    </main>
+
+    <script>
+/* Sign up page. Needs auth.js and languages.js loaded first. */
+
+const byId = (id) => document.getElementById(id);
+
+const fields = {
+    name: ["fullName", "nameMsg"],
+    id: ["email", "idMsg"],
+    pw: ["password", "pwMsg"],
+    cf: ["confirmPassword", "cfMsg"]
+};
+
+/* ===== Text that has no entry in languages.js yet ===== */
+const LOCAL = {
+    "err.fail": {
+        en: "Unable to create your account. Please try again.",
+        fil: "Hindi magawa ang iyong account. Subukan muli."
+    },
+    "err.network": {
+        en: "Can't reach the server. Check your connection and try again.",
+        fil: "Hindi makakonekta sa server. Suriin ang iyong koneksyon at subukan muli."
+    }
+};
+
+function tr(key) {
+    if (LOCAL[key]) return LOCAL[key][I18N.getLang()] || LOCAL[key].en;
+    return I18N.t(key);
+}
+
+/* ===== Error helpers (errors are stored as translation keys) ===== */
+const errs = {}; // field key -> translation key
+
+function setErr(key, msgKey) {
+    const [inputId, msgId] = fields[key];
+    errs[key] = msgKey || null;
+    byId(msgId).textContent = msgKey ? tr(msgKey) : "";
+    byId(inputId).classList.toggle("invalid", !!msgKey);
+}
+
+function clearAll() {
+    Object.keys(fields).forEach((key) => setErr(key, ""));
+}
+
+function repaintErrors() {
+    Object.keys(errs).forEach((key) => {
+        if (errs[key]) byId(fields[key][1]).textContent = tr(errs[key]);
+    });
+}
+
+// Clear only the error of the field being edited
+Object.keys(fields).forEach((key) => {
+    byId(fields[key][0]).addEventListener("input", () => setErr(key, ""));
+});
+
+// Re-render error messages when the language changes
+window.addEventListener("langchange", repaintErrors);
+
+/* ===== Validation (each returns a translation key, or "" if OK) ===== */
+// The 200-character name limit is already enforced by maxlength on the input.
+function validateName(name) {
+    return name ? "" : "prof.err.name";
+}
+
+function validatePassword(pw) {
+    if (pw.length < 8) return "sig.err.len";
+    if (!/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return "sig.err.mix";
+    return "";
+}
+
+function validateConfirm(pw, cf) {
+    if (!cf) return "sig.err.cf";
+    if (pw !== cf) return "sig.err.match";
+    return "";
+}
+
+// Maps Auth.createUser error codes to [field key, translation key]
+const serverErrors = {
+    exists: ["id", "sig.err.exists"],
+    invalid_name: ["name", "prof.err.name"],
+    invalid_id: ["id", "sig.err.id"],
+    weak_password: ["pw", "sig.err.len"],
+    network: ["id", "err.network"]
+};
+
+byId("signupForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    clearAll();
+
+    const name = byId("fullName").value.trim();
+    const raw = byId("email").value.trim();
+    const pw = byId("password").value;
+    const cf = byId("confirmPassword").value;
+
+    const errors = {
+        name: validateName(name),
+        id: Auth.validId(raw) ? "" : "sig.err.id",
+        pw: validatePassword(pw),
+        cf: validateConfirm(pw, cf)
+    };
+
+    // Only show the mismatch error if the password itself is valid
+    if (errors.pw && errors.cf === "sig.err.match") {
+        errors.cf = "";
+    }
+
+    let firstInvalid = null;
+    for (const key of Object.keys(fields)) {
+        setErr(key, errors[key]);
+        if (errors[key] && !firstInvalid) firstInvalid = key;
+    }
+
+    if (firstInvalid) {
+        byId(fields[firstInvalid][0]).focus();
+        return;
+    }
+
+    const res = Auth.createUser(Auth.normalize(raw), pw, { name: name });
+
+    if (!res.ok) {
+        const [key, msgKey] = serverErrors[res.error] || ["id", "err.fail"];
+        setErr(key, msgKey);
+        byId(fields[key][0]).focus();
+        return;
+    }
+
+    location.href = "index.html?created=1";
+});
+    </script>
+</body>
+</html>

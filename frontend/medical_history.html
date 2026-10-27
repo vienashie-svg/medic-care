@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en" data-requires-login>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="hist.doctitle">Medical History | MEDIC CARE</title>
+  <script src="auth.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+/* === MEDIC CARE design tokens (shared across pages) === */
+:root {
+  --navy: #1b3a8f;
+  --navy-deep: #16296b;
+  --header-bg: #b4bfdc;
+  --blue: #3f5fcf;
+  --blue-link: #3b4fd8;
+  --bg-top: #eff0f5;
+  --bg-bottom: #7b9bef;
+  --card: #f9f9f9;
+  --info: #d9d9d9;
+  --text: #1c1c1e;
+  --title: #2b2b30;
+  --muted: #5d6270;
+  --green-bg: #aee6bd;  --green-tx: #1f8a43;
+  --yellow-bg: #fbe98a; --yellow-tx: #b3830d;
+  --red-bg: #f6b9b9;    --red-tx: #b32626;
+  --radius-pill: 999px;
+  --radius-card: 14px;
+  --radius-box: 12px;
+  --shadow-card: 0 2px 6px rgba(40, 55, 110, .35);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  color: var(--text);
+  background: linear-gradient(180deg, var(--bg-top) 0%, #c3cdf0 55%, var(--bg-bottom) 100%) fixed;
+}
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid #5b7bd6; outline-offset: 2px; }
+
+@keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* === Layout === */
+.page { max-width: 980px; margin: 0 auto; padding: 18px min(4.4%, 43.12px) 60px; }
+
+/* === Header === */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 38px; padding: 0 16px;
+  background: var(--header-bg);
+  border-radius: var(--radius-pill);
+}
+.icon-btn { background: none; border: 0; color: var(--navy); padding: 6px; display: grid; place-items: center; border-radius: 8px; }
+.icon-btn.light { color: #fff; font-size: 30px; line-height: 1; }
+.brand { display: flex; align-items: center; gap: 6px; }
+.brand-name { font-weight: 800; font-size: 22px; letter-spacing: .3px; color: #0e2a7d; }
+
+/* === Page head === */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 30px 8px 28px; }
+h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: .6px; color: var(--title); }
+
+.btn-primary {
+  background: var(--blue); color: #fff; border: 0; border-radius: 4px;
+  padding: 9px 14px; font-weight: 600; font-size: 15px; white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(30, 50, 130, .3);
+  transition: background .15s, transform .1s;
+}
+.btn-primary:hover { background: #3453bb; }
+.btn-primary:active { transform: translateY(1px); }
+.btn-ghost { background: transparent; border: 1px solid #b7bdd0; color: var(--text); border-radius: 4px; padding: 9px 14px; font-weight: 500; }
+.btn-ghost:hover { background: #eef0f7; }
+.btn-danger { background: #c53030; color: #fff; border: 0; border-radius: 4px; padding: 9px 14px; font-weight: 600; }
+.btn-danger:hover { background: #a82626; }
+
+/* === Sidebar === */
+.scrim { position: fixed; inset: 0; background: rgba(10, 18, 50, .45); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 40; }
+.scrim.open { opacity: 1; pointer-events: auto; }
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: min(290px, 86vw); z-index: 50;
+  display: flex; flex-direction: column; padding: 20px 18px 28px;
+  background: #142a6b; box-shadow: 4px 0 22px rgba(10, 20, 60, .35);
+  transform: translateX(-100%); visibility: hidden;
+  transition: transform .35s cubic-bezier(.22, .61, .36, 1), visibility 0s linear .35s;
+}
+.sidebar.open { transform: none; visibility: visible; transition-delay: 0s; }
+.side-profile { display: flex; align-items: center; gap: 12px; color: #fff; padding: 0 2px; }
+.side-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; overflow: hidden;
+  background: #2a9a92; color: #fff; font-weight: 700; font-size: 16px;
+}
+.side-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.side-info { display: flex; flex-direction: column; min-width: 0; }
+.side-info strong { font-size: 17px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-info span { font-size: 11.5px; font-weight: 500; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar .icon-btn.light { margin-left: auto; color: #aab7de; font-size: 28px; padding: 2px 8px; }
+.sidebar .icon-btn.light:hover { color: #fff; }
+.sidebar hr { border: 0; border-top: 2px solid #8d98bd; margin: 18px 0 20px; opacity: .8; }
+.side-search {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; margin-bottom: 18px;
+  background: #2b4380; border-radius: 8px; color: #a3b0d6;
+}
+.side-search svg { width: 24px; height: 24px; flex: none; }
+.side-search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: #fff; font-size: 17px; font-weight: 500; padding: 0; }
+.side-search input::placeholder { color: #a3b0d6; opacity: 1; }
+.side-search input::-webkit-search-cancel-button { filter: invert(1); opacity: .6; }
+.side-search:focus-within { box-shadow: 0 0 0 2px #7f9df0; }
+.sidebar nav { flex: 1; overflow-y: auto; }
+.sidebar nav a, .logout {
+  display: flex; align-items: center; gap: 22px; padding: 10px 10px; margin-bottom: 4px;
+  color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; border-radius: 8px; transition: background .15s;
+}
+.sidebar nav a svg, .logout svg { width: 24px; height: 24px; flex: none; color: #8997c4; }
+.sidebar nav a:hover, .logout:hover { background: rgba(255, 255, 255, .09); }
+.sidebar nav a.active { background: rgba(255, 255, 255, .15); }
+.sidebar nav a.active svg { color: #fff; }
+.sidebar nav a[hidden] { display: none; }
+.no-match { color: #a3b0d6; font-size: 14px; padding: 8px 10px; margin: 0; }
+
+/* --- Modals --- */
+.modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(15, 25, 60, .5); }
+.modal[hidden] { display: none; }
+.modal-card { width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius-card); padding: 22px; box-shadow: 0 10px 30px rgba(20, 30, 80, .4); animation: pop .2s ease; }
+.modal-card h2 { margin: 0 0 14px; font-size: 19px; font-weight: 700; color: var(--navy); }
+.modal-card label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
+.modal-card input, .modal-card select {
+  display: block; width: 100%; margin-top: 5px; padding: 9px 10px;
+  border: 1px solid #c4c9db; border-radius: 8px; background: #f8f9fd; color: var(--text); font-size: 15px;
+}
+.modal-card input[readonly] { background: #eceef5; color: var(--muted); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.muted { color: var(--muted); font-size: 14.5px; margin: 0 0 14px; line-height: 1.5; }
+.error { color: var(--red-tx); font-size: 13.5px; font-weight: 500; min-height: 18px; margin: 0 0 8px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+/* --- Medical History page-specific styles --- */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.history-head { margin-bottom: 14px; }
+
+/* --- Tabs --- */
+.tabs {
+  display: flex; gap: 6px; padding: 0 8px; margin: 0 4px 14px;
+  background: #f6f6f9; border-radius: 10px; box-shadow: 0 2px 5px rgba(40, 55, 110, .3);
+  overflow-x: auto; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  position: relative; background: none; border: 0; padding: 8px 26px 9px;
+  font-size: 15px; font-weight: 400; color: #6a6e7a; white-space: nowrap; transition: color .15s;
+}
+.tab:hover { color: var(--blue-link); }
+.tab.active { color: #3b6be0; }
+.tab.active::after {
+  content: ""; position: absolute; left: 8px; right: 8px; bottom: 0; height: 3px;
+  background: #5b84f0; border-radius: 3px;
+}
+
+/* --- Table card --- */
+.table-card {
+  margin: 0 4px; min-height: 405px; display: flex; flex-direction: column;
+  background: var(--card); border-radius: 16px; overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.thead, .row-item {
+  display: grid; grid-template-columns: 1.15fr 1.9fr 1.45fr 1.2fr 1.25fr; align-items: center;
+  column-gap: 8px; padding: 0 22px;
+}
+.thead {
+  height: 38px; background: #dde1f0; font-size: 14.5px; font-weight: 600; text-transform: uppercase; color: #15151a;
+}
+.th-sort { background: none; border: 0; padding: 0; display: inline-flex; align-items: center; gap: 8px; font: inherit; text-transform: inherit; color: inherit; width: fit-content; }
+.arrows { display: inline-flex; flex-direction: column; gap: 2px; }
+.arrows i { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; }
+.arrows .up   { border-bottom: 5px solid #9a9ea8; }
+.arrows .down { border-top: 5px solid #9a9ea8; }
+.th-sort[data-dir="asc"]  .up   { border-bottom-color: var(--navy); }
+.th-sort[data-dir="desc"] .down { border-top-color: var(--navy); }
+.center { text-align: center; }
+
+.tbody { flex: 1; overflow-y: auto; max-height: 440px; }
+.row-item { padding-top: 16px; padding-bottom: 16px; border-bottom: 1px solid #e6e8f0; font-size: 16px; font-weight: 500; }
+.row-item:last-child { border-bottom: 0; }
+.r-date { font-size: 18px; }
+.r-doc { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.avatar { width: 52px; height: 52px; border-radius: 50%; flex: none; overflow: hidden; background: #e2e2e2; display: grid; place-items: center; font-weight: 600; color: var(--navy); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.r-name { margin: 0; font-size: 16px; font-weight: 600; }
+.r-spec { margin: 1px 0 0; font-size: 14px; font-weight: 500; }
+
+.status { display: inline-block; font-size: 14px; font-weight: 500; padding: 5px 14px; border-radius: var(--radius-pill); }
+.status.completed { background: var(--green-bg); color: var(--green-tx); }
+.status.pending   { background: var(--yellow-bg); color: var(--yellow-tx); }
+.status.cancelled { background: var(--red-bg); color: var(--red-tx); }
+.status.confirmed { background: #dfe6fb; color: #1d3f8f; }
+
+.btn-details {
+  justify-self: center; background: #6b86d8; color: #fff; border: 0; border-radius: var(--radius-pill);
+  padding: 6px 16px; font-size: 15px; font-weight: 500; transition: background .15s;
+}
+.btn-details:hover { background: #566fc6; }
+
+.action-note { display: inline-block; font-size: 15px; font-weight: 600; text-align: center; }
+.action-note.pending { color: var(--yellow-tx); }
+.action-note.confirmed { color: #1d3f8f; }
+.action-note.completed { color: var(--green-tx); }
+.action-note.cancelled { color: var(--red-tx); }
+.r-action { text-align: center; }
+
+.empty-state { display: grid; place-items: center; height: 100%; min-height: 340px; text-align: center; padding: 20px; color: var(--muted); }
+.empty-state strong { display: block; color: var(--title); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+
+/* --- Details modal --- */
+.details { margin: 0 0 14px; display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; font-size: 15px; }
+.details dt { color: var(--muted); font-weight: 600; }
+.details dd { margin: 0; font-weight: 500; }
+
+/* --- Responsive ----- */
+@media (max-width: 760px) {
+  .page-head { flex-wrap: wrap; }
+  .thead { display: none; }
+  .tbody { max-height: none; }
+  .row-item { grid-template-columns: 1fr auto; row-gap: 10px; padding: 16px 18px; }
+  .r-date { grid-column: 1 / -1; font-size: 16px; }
+  .r-doc { grid-column: 1 / -1; }
+  .r-diag { grid-column: 1; }
+  .r-status { grid-column: 2; }
+  .btn-details { grid-column: 1 / -1; justify-self: start; }
+  .r-action { grid-column: 1 / -1; text-align: left; }
+}
+@media (max-width: 420px) {
+  .row { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *:not(.sidebar):not(.scrim) { animation: none !important; transition: none !important; }
+}
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation" aria-hidden="true">
+    <div class="side-profile">
+      <div class="side-avatar" id="sideAvatar">FP</div>
+      <div class="side-info">
+        <strong id="sideName">Final Project</strong>
+        <span id="sideEmail">finalproject@gmail.com</span>
+      </div>
+      <button class="icon-btn light" id="closeSidebar" aria-label="Close menu" data-i18n-aria="menu.close">&times;</button>
+    </div>
+    <hr>
+    <label class="side-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg>
+      <input type="search" id="navSearch" placeholder="Search..." data-i18n-ph="nav.search" aria-label="Search menu" autocomplete="off">
+    </label>
+    <nav id="nav">
+      <a href="index.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11.5 12 3l9 8.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.dashboard">Dashboard</span></a>
+      <a href="profile.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.5 3.8-7 8.5-7s8.5 2.5 8.5 7z"/></svg><span data-i18n="nav.profile">Profile</span></a>
+      <a href="appointments.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zM5 9h14v11H5z"/><path d="M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 15h2v2H7zm4 0h2v2h-2z"/></svg><span data-i18n="nav.appointment">Appointment</span></a>
+      <a href="medical-history.html" class="active" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg><span data-i18n="nav.history">Medical History</span></a>
+      <a href="settings.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span data-i18n="nav.settings">Settings</span></a>
+      <p class="no-match" id="noMatch" hidden data-i18n="nav.nomatch">No matching pages</p>
+    </nav>
+    <a href="login.html" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5M8 8l-4 4 4 4M4 12h11"/></svg><span data-i18n="nav.logout">Logout</span></a>
+  </aside>
+
+  <div class="page">
+    <!-- Header -->
+    <header class="topbar">
+      <button class="icon-btn" id="menuBtn" aria-label="Open menu" data-i18n-aria="menu.open" aria-expanded="false" aria-controls="sidebar">
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M2 5h18M2 11h18M2 17h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      </button>
+      <div class="brand">
+        <span class="brand-name">MEDIC CARE</span>
+        <svg class="brand-logo" width="30" height="34" viewBox="0 0 34 38" aria-hidden="true">
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb4c9"/><stop offset="1" stop-color="#2b4fb8"/></linearGradient></defs>
+          <path d="M17 1.5 31 6.5v11c0 9-6 15.5-14 19C9 33 3 26.5 3 17.5v-11z" fill="url(#sg)" stroke="#223c93" stroke-width="2"/>
+          <path d="M17 8.5 26 12v6c0 5.5-3.5 9.5-9 12-5.5-2.5-9-6.5-9-12v-6z" fill="#dff3f7" opacity=".35"/>
+          <path d="M14.5 12.5h5v4h4v5h-4v4h-5v-4h-4v-5h4z" fill="#fff"/>
+        </svg>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main>
+      <div class="page-head history-head">
+        <h1 data-i18n="hist.h1">Medical History</h1>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Record types">
+        <button class="tab active" role="tab" aria-selected="true"  data-type="all" data-i18n="tab.all">All Records</button>
+        <button class="tab"        role="tab" aria-selected="false" data-type="consultation" data-i18n="tab.consultation">Consultations</button>
+        <button class="tab"        role="tab" aria-selected="false" data-type="lab" data-i18n="tab.lab">Lab Results</button>
+        <button class="tab"        role="tab" aria-selected="false" data-type="prescription" data-i18n="tab.prescription">Prescriptions</button>
+      </div>
+
+      <section class="table-card" aria-label="Medical records">
+        <div class="thead" role="row">
+          <button class="th-sort" id="sortDate" aria-label="Sort by date" data-i18n-aria="sort.date"><span data-i18n="th.date">Date</span><span class="arrows" aria-hidden="true"><i class="up"></i><i class="down"></i></span></button>
+          <div data-i18n="th.doctor">Doctors &amp; Specialty</div>
+          <div data-i18n="th.diag">Diagnosis</div>
+          <div><span class="sr-only" data-i18n="th.status">Status</span></div>
+          <div class="center" data-i18n="th.actions">Actions</div>
+        </div>
+        <div class="tbody" id="records" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Details modal -->
+  <div class="modal" id="detailsModal" role="dialog" aria-modal="true" aria-labelledby="detailsTitle" hidden>
+    <div class="modal-card">
+      <h2 id="detailsTitle" data-i18n="det.title">Record details</h2>
+      <dl class="details" id="detailsBody"></dl>
+      <div class="modal-actions">
+        <button class="btn-primary" data-close data-i18n="common.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script>
+/* MEDIC CARE – Medical History page (localStorage via auth.js, walang database) */
+
+/* --- Data ---
+   Records come straight from the appointments, so booking / rescheduling /
+   cancelling shows up here automatically.
+   Record shape:
+   { id, type: "consultation" | "lab" | "prescription", date: "2026-10-24",
+     doctor: "Dr. Name", specialty: "Pediatrics", photo: "images/dr.jpg" (optional),
+     diagnosis: "Acute Tonsillitis", status: "Completed" | "Pending" | "Cancelled", notes: "optional" }
+*/
+const DOCS = {
+  celestia:  ["Dr. Celestia Santos", "OB GYN"],
+  rich:      ["Dr. Rich Reyes", "PEDIATRICS"],
+  sebastian: ["Dr. Sebastian Reed", "CARDIOLOGY"],
+  mich:      ["Dr. Mich Collins", "OB GYN"],
+  ana:       ["Dr. Ana Lim", "DERMATOLOGY"],
+  paolo:     ["Dr. Paolo Cruz", "GENERAL MEDICINE"],
+};
+const pretty = (s) => String(s || "").toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
+
+function loadRecords() {
+  return Auth.getAppointments().map((a) => {
+    const known = DOCS[a.doctor];
+    const specific = a.specific || "";
+    return {
+      id: a.id,
+      type: /lab|ultrasound/i.test(specific) ? "lab" : "consultation",
+      date: a.date,
+      doctor: known ? known[0] : (a.doctorName || "Doctor"),
+      specialty: known ? known[1] : (a.spec || ""),
+      diagnosis: specific ? pretty(specific) : (a.service || "—"),
+      status: a.status || "Pending",
+      state: Auth.recordState(a),          // Pending | Cancelled | Completed
+      notes: a.time ? "Time: " + a.time : ""
+    };
+  });
+}
+let records = loadRecords();
+
+/* --- Helpers --- */
+const $ = (id) => document.getElementById(id);
+const t = (k, v) => (window.I18N ? I18N.t(k, v) : k);
+const monthNames = () => (window.I18N ? I18N.months() : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]);
+const statusLabel = (s) => (window.I18N ? I18N.status(s) : s);
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function fmtDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${monthNames()[m - 1]} ${d}, ${y}`;
+}
+function initials(name) {
+  return name.replace(/^Dr\.?\s*/i, "").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+}
+
+/* --- State --- */
+let activeType = "all";
+let sortDir = "desc"; // newest first
+
+/* --- Render --- */
+function render() {
+  const list = records
+    .filter((r) => activeType === "all" || r.type === activeType)
+    .sort((a, b) => (sortDir === "asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
+
+  const body = $("records");
+  if (!list.length) {
+    body.innerHTML = `<div class="empty-state"><div><strong>${t("empty.title", { label: t("lbl." + activeType) })}</strong>${t("empty.body", { label: t("lbl." + activeType) })}</div></div>`;
+    return;
+  }
+  body.innerHTML = list.map((r) => {
+    const shown = r.state === "Completed" ? "Completed" : r.status;
+    return `
+    <div class="row-item" role="row">
+      <div class="r-date">${esc(fmtDate(r.date))}</div>
+      <div class="r-doc">
+        <div class="avatar">${r.photo ? `<img src="${esc(r.photo)}" alt="${esc(r.doctor)}">` : esc(initials(r.doctor))}</div>
+        <div><p class="r-name">${esc(r.doctor)}</p><p class="r-spec">${esc(r.specialty)}</p></div>
+      </div>
+      <div class="r-diag">${esc(r.diagnosis)}</div>
+      <div class="r-status"><span class="status ${esc(shown.toLowerCase())}">${esc(statusLabel(shown))}</span></div>
+      <div class="r-action"><span class="action-note ${esc(String(r.state).toLowerCase())}">${esc(statusLabel(r.state))}</span></div>
+    </div>`;
+  }).join("");
+}
+
+/* --- Tabs --- */
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((el) => {
+      const on = el === tab;
+      el.classList.toggle("active", on);
+      el.setAttribute("aria-selected", String(on));
+    });
+    activeType = tab.dataset.type;
+    render();
+  });
+});
+
+/* ---- Sort ---- */
+const sortBtn = $("sortDate");
+sortBtn.dataset.dir = sortDir;
+sortBtn.addEventListener("click", () => {
+  sortDir = sortDir === "desc" ? "asc" : "desc";
+  sortBtn.dataset.dir = sortDir;
+  render();
+});
+
+/* --- Details modal --- */
+$("records").addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-details");
+  if (!btn) return;
+  const r = records.find((x) => String(x.id) === btn.dataset.id);
+  if (!r) return;
+  $("detailsBody").innerHTML = `
+    <dt>${t("th.date")}</dt><dd>${esc(fmtDate(r.date))}</dd>
+    <dt>${t("det.doctor")}</dt><dd>${esc(r.doctor)} (${esc(r.specialty)})</dd>
+    <dt>${t("th.diag")}</dt><dd>${esc(r.diagnosis)}</dd>
+    <dt>${t("th.status")}</dt><dd>${esc(statusLabel(r.status))}</dd>
+    <dt>${t("det.notes")}</dt><dd>${esc(r.notes || t("det.nonotes"))}</dd>`;
+  $("detailsModal").hidden = false;
+});
+
+function closeModals() { document.querySelectorAll(".modal").forEach((m) => (m.hidden = true)); }
+document.querySelectorAll(".modal").forEach((m) => {
+  m.addEventListener("click", (e) => { if (e.target === m || e.target.hasAttribute("data-close")) closeModals(); });
+});
+
+/* --- Sidebar (shared, see auth.js) --- */
+const { setSidebar } = Auth.initSidebar();
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeModals(); setSidebar(false); }
+});
+
+render();
+
+// Re-draw the table when the language changes
+window.addEventListener("langchange", render);
+  </script>
+</body>
+</html>

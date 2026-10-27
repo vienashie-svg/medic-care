@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en" data-requires-login>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="set.doctitle">Settings | MEDIC CARE</title>
+  <script src="auth.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+/* MEDIC CARE – Settings page (design tokens, header, sidebar + page styles) */
+
+:root {
+  --navy: #1b3a8f;
+  --navy-deep: #16296b;
+  --header-bg: #b4bfdc;
+  --blue: #3563d9;
+  --bg-top: #eff0f5;
+  --bg-bottom: #7b9bef;
+  --text: #1c1c1e;
+  --muted: #5d6270;
+  --red-tx: #b32626;
+  --card: #f9f9f9;
+  --shadow-card: 0 2px 6px rgba(40, 55, 110, .35);
+  --radius-pill: 999px;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; }
+body {
+  margin: 0; min-height: 100vh; font-family: var(--font); color: var(--text);
+  background: linear-gradient(180deg, var(--bg-top) 0%, #c3cdf0 55%, var(--bg-bottom) 100%) fixed;
+}
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid #5b7bd6; outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ===== Layout & header ===== */
+.page { max-width: 980px; margin: 0 auto; padding: 18px min(4.4%, 43.12px) 60px; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 38px; padding: 0 16px; background: var(--header-bg); border-radius: var(--radius-pill);
+}
+.icon-btn { background: none; border: 0; color: var(--navy); padding: 6px; display: grid; place-items: center; border-radius: 8px; }
+.icon-btn.light { color: #fff; font-size: 30px; line-height: 1; margin-left: auto; }
+.brand { display: flex; align-items: center; gap: 6px; }
+.brand-name { font-weight: 800; font-size: 22px; letter-spacing: .3px; color: #0e2a7d; }
+
+/* ===== Sidebar ===== */
+.scrim { position: fixed; inset: 0; background: rgba(10, 18, 50, .45); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 40; }
+.scrim.open { opacity: 1; pointer-events: auto; }
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: min(290px, 86vw); z-index: 50;
+  display: flex; flex-direction: column; padding: 20px 18px 28px;
+  background: #142a6b; box-shadow: 4px 0 22px rgba(10, 20, 60, .35);
+  transform: translateX(-100%); visibility: hidden;
+  transition: transform .35s cubic-bezier(.22, .61, .36, 1), visibility 0s linear .35s;
+}
+.sidebar.open { transform: none; visibility: visible; transition-delay: 0s; }
+.side-profile { display: flex; align-items: center; gap: 12px; color: #fff; padding: 0 2px; }
+.side-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; overflow: hidden;
+  background: #2a9a92; color: #fff; font-weight: 700; font-size: 16px;
+}
+.side-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.side-info { display: flex; flex-direction: column; min-width: 0; }
+.side-info strong { font-size: 17px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-info span { font-size: 11.5px; font-weight: 500; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar .icon-btn.light { margin-left: auto; color: #aab7de; font-size: 28px; padding: 2px 8px; }
+.sidebar .icon-btn.light:hover { color: #fff; }
+.sidebar hr { border: 0; border-top: 2px solid #8d98bd; margin: 18px 0 20px; opacity: .8; }
+.side-search {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; margin-bottom: 18px;
+  background: #2b4380; border-radius: 8px; color: #a3b0d6;
+}
+.side-search svg { width: 24px; height: 24px; flex: none; }
+.side-search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: #fff; font-size: 17px; font-weight: 500; padding: 0; }
+.side-search input::placeholder { color: #a3b0d6; opacity: 1; }
+.side-search input::-webkit-search-cancel-button { filter: invert(1); opacity: .6; }
+.side-search:focus-within { box-shadow: 0 0 0 2px #7f9df0; }
+.sidebar nav { flex: 1; overflow-y: auto; }
+.sidebar nav a, .logout {
+  display: flex; align-items: center; gap: 22px; padding: 10px 10px; margin-bottom: 4px;
+  color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; border-radius: 8px; transition: background .15s;
+}
+.sidebar nav a svg, .logout svg { width: 24px; height: 24px; flex: none; color: #8997c4; }
+.sidebar nav a:hover, .logout:hover { background: rgba(255, 255, 255, .09); }
+.sidebar nav a.active { background: rgba(255, 255, 255, .15); }
+.sidebar nav a.active svg { color: #fff; }
+.sidebar nav a[hidden] { display: none; }
+.no-match { color: #a3b0d6; font-size: 14px; padding: 8px 10px; margin: 0; }
+
+/* ===== Account Settings ===== */
+.title-card { margin-top: 26px; padding: 18px 24px 24px; background: var(--card); border-radius: 14px; box-shadow: var(--shadow-card); }
+.title-card h1 { margin: 0 0 4px; font-size: 22px; font-weight: 600; letter-spacing: .4px; color: #2b2b30; }
+.title-card p { margin: 0; font-size: 15px; line-height: 1.4; max-width: 340px; color: #33343b; }
+
+.panel { margin-top: 28px; padding: 6px 26px 30px; background: var(--card); border-radius: 16px; box-shadow: var(--shadow-card); }
+.panel hr { border: 0; border-top: 1px solid #d3d4da; margin: 0; }
+.block { padding: 20px 0 22px; }
+.block h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.sec-icon { width: 20px; height: 20px; flex: none; }
+.desc { margin: 0 0 14px; font-size: 13.5px; color: #30313a; }
+.ask { margin: 0 0 14px; font-size: 14px; font-weight: 500; }
+
+.select-box { position: relative; width: 170px; height: 34px; background: #e0dfe0; border-radius: 8px; box-shadow: 0 2px 3px rgba(0, 0, 0, .28); }
+.select-box select { appearance: none; -webkit-appearance: none; width: 100%; height: 100%; padding: 0 34px 0 12px; background: none; border: 0; outline: 0; font-size: 13px; font-weight: 500; color: #6b6b72; cursor: pointer; border-radius: 8px; }
+.select-box:focus-within { box-shadow: 0 0 0 2px #5b84f0; }
+.caret { position: absolute; right: 12px; top: 50%; margin-top: -2px; width: 0; height: 0; pointer-events: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #555; }
+
+.pw-form { max-width: 360px; }
+.field { margin-bottom: 4px; }
+.field label { display: block; font-size: 13px; font-weight: 700; margin: 0 0 4px 1px; }
+.input-box { display: flex; align-items: center; height: 34px; padding: 0 12px; background: #e0dfe0; border-radius: 8px; box-shadow: 0 2px 3px rgba(0, 0, 0, .28); transition: background .15s, box-shadow .15s; }
+.input-box input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; font-size: 14.5px; color: var(--text); padding: 0; letter-spacing: .5px; }
+.input-box input[type="email"] { letter-spacing: 0; }
+.input-box:focus-within { background: #fff; box-shadow: 0 0 0 2px #5b84f0; }
+.input-box.invalid { box-shadow: 0 0 0 2px #d94a4a; }
+.err { min-height: 18px; margin: 3px 0 2px 1px; font-size: 12.5px; font-weight: 500; color: var(--red-tx); }
+.link-btn { background: none; border: 0; padding: 0; margin: 2px 0 0 1px; color: var(--navy); font-size: 13px; font-weight: 500; }
+.link-btn:hover { text-decoration: underline; }
+.actions { display: flex; justify-content: center; margin-top: 14px; }
+.btn-save { background: var(--blue); color: #fff; border: 0; border-radius: var(--radius-pill); padding: 8px 28px; font-size: 14.5px; font-weight: 600; box-shadow: 0 2px 4px rgba(30, 50, 130, .35); transition: background .15s, transform .1s; }
+.btn-save:hover { background: #2c55c0; }
+.btn-save:active { transform: translateY(1px); }
+
+.btn-delete { background: #d62b2b; color: #fff; border: 0; border-radius: 3px; padding: 9px 22px 9px 20px; font-size: 12.5px; font-weight: 600; letter-spacing: .2px; box-shadow: 0 2px 3px rgba(0, 0, 0, .3); transition: background .15s; }
+.btn-delete:hover { background: #b92222; }
+.btn-delete.big { font-size: 14px; padding: 9px 16px; border-radius: 8px; }
+
+.modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(15, 25, 60, .5); }
+.modal[hidden] { display: none; }
+.modal-card { width: 100%; max-width: 400px; background: #f4f4f6; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(20, 30, 80, .4); }
+.modal-card h2 { margin: 0 0 10px; font-size: 19px; font-weight: 700; color: var(--navy); }
+.muted { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin: 0 0 14px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+.btn-ghost { background: transparent; border: 1px solid #b7bdd0; color: var(--text); border-radius: var(--radius-pill); padding: 8px 16px; font-weight: 500; font-size: 14.5px; }
+.btn-ghost:hover { background: #e3e5ef; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; z-index: 80; max-width: calc(100vw - 32px); text-align: center; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: var(--navy-deep); color: #fff; padding: 12px 20px; border-radius: var(--radius-pill); font-size: 14.5px; font-weight: 500; transition: .25s; }
+.toast.success { background: #1f8a43; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 480px) {
+  .panel { padding: 4px 18px 26px; }
+  .title-card { padding: 16px 18px 20px; }
+}
+@media (prefers-reduced-motion: reduce) { *:not(.sidebar):not(.scrim) { transition: none !important; } }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation" aria-hidden="true">
+    <div class="side-profile">
+      <div class="side-avatar" id="sideAvatar">FP</div>
+      <div class="side-info">
+        <strong id="sideName">Final Project</strong>
+        <span id="sideEmail">finalproject@gmail.com</span>
+      </div>
+      <button class="icon-btn light" id="closeSidebar" aria-label="Close menu" data-i18n-aria="menu.close">&times;</button>
+    </div>
+    <hr>
+    <label class="side-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg>
+      <input type="search" id="navSearch" placeholder="Search..." data-i18n-ph="nav.search" aria-label="Search menu" autocomplete="off">
+    </label>
+    <nav id="nav">
+      <a href="index.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11.5 12 3l9 8.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.dashboard">Dashboard</span></a>
+      <a href="profile.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.5 3.8-7 8.5-7s8.5 2.5 8.5 7z"/></svg><span data-i18n="nav.profile">Profile</span></a>
+      <a href="appointments.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zM5 9h14v11H5z"/><path d="M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 15h2v2H7zm4 0h2v2h-2z"/></svg><span data-i18n="nav.appointment">Appointment</span></a>
+      <a href="medical-history.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg><span data-i18n="nav.history">Medical History</span></a>
+      <a href="settings.html" class="active" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span data-i18n="nav.settings">Settings</span></a>
+      <p class="no-match" id="noMatch" hidden data-i18n="nav.nomatch">No matching pages</p>
+    </nav>
+    <a href="login.html" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5M8 8l-4 4 4 4M4 12h11"/></svg><span data-i18n="nav.logout">Logout</span></a>
+  </aside>
+
+  <div class="page">
+    <!-- Header -->
+    <header class="topbar">
+      <button class="icon-btn" id="menuBtn" aria-label="Open menu" data-i18n-aria="menu.open" aria-expanded="false" aria-controls="sidebar">
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M2 5h18M2 11h18M2 17h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      </button>
+      <div class="brand">
+        <span class="brand-name">MEDIC CARE</span>
+        <svg class="brand-logo" width="30" height="34" viewBox="0 0 34 38" aria-hidden="true">
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb4c9"/><stop offset="1" stop-color="#2b4fb8"/></linearGradient></defs>
+          <path d="M17 1.5 31 6.5v11c0 9-6 15.5-14 19C9 33 3 26.5 3 17.5v-11z" fill="url(#sg)" stroke="#223c93" stroke-width="2"/>
+          <path d="M17 8.5 26 12v6c0 5.5-3.5 9.5-9 12-5.5-2.5-9-6.5-9-12v-6z" fill="#dff3f7" opacity=".35"/>
+          <path d="M14.5 12.5h5v4h4v5h-4v4h-5v-4h-4v-5h4z" fill="#fff"/>
+        </svg>
+      </div>
+    </header>
+
+    <!-- Settings card -->
+    <main>
+      <section class="title-card">
+        <h1 data-i18n="set.h1">Account Settings</h1>
+        <p data-i18n="set.sub">Manage your account security and preferences.</p>
+      </section>
+
+      <section class="panel">
+        <!-- Language -->
+        <div class="block" aria-labelledby="langTitle">
+          <h2 id="langTitle"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="#2a8fd0" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c-4 4.5-4 14.5 0 19M12 2.5c4 4.5 4 14.5 0 19"/></svg><span data-i18n="lang.title">Language</span></h2>
+          <p class="desc" data-i18n="lang.desc">Choose your preferred language for the MEDIC CARE interface.</p>
+          <div class="select-box">
+            <select id="langSelect" aria-label="Language" data-i18n-aria="lang.title">
+              <option value="en">ENGLISH</option>
+              <option value="fil">FILIPINO</option>
+            </select>
+            <span class="caret" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Change password -->
+        <div class="block" aria-labelledby="pwTitle">
+          <h2 id="pwTitle"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="#d9a21b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4.5"/><path d="m11.3 11.7 8.7-8.7M16 7l3 3M14 9l2 2"/></svg><span data-i18n="pw.title">Change Password</span></h2>
+          <p class="desc" data-i18n="pw.desc">Update your account password to keep your account secure.</p>
+          <form id="pwForm" class="pw-form" novalidate>
+            <div class="field">
+              <label for="currentPw" data-i18n="pw.current">Current Password</label>
+              <div class="input-box"><input id="currentPw" type="password" autocomplete="current-password"></div>
+              <p class="err" id="errCurrent" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="newPw" data-i18n="pw.new">New Password</label>
+              <div class="input-box"><input id="newPw" type="password" autocomplete="new-password"></div>
+              <p class="err" id="errNew" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="confirmPw" data-i18n="pw.confirm">Confirm New Password</label>
+              <div class="input-box"><input id="confirmPw" type="password" autocomplete="new-password"></div>
+              <p class="err" id="errConfirm" role="alert"></p>
+            </div>
+            <button type="button" class="link-btn" id="forgotBtn" data-i18n="pw.forgot">Forgot Password ?</button>
+            <div class="actions"><button type="submit" class="btn-save" data-i18n="pw.save">Save</button></div>
+          </form>
+        </div>
+
+        <hr>
+
+        <!-- Delete account -->
+        <div class="block" aria-labelledby="delTitle">
+          <h2 id="delTitle"><svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span data-i18n="del.title">Delete Account</span></h2>
+          <p class="desc" data-i18n="del.desc">Permanently delete your MEDIC CARE account.</p>
+          <p class="ask" data-i18n="del.q">Do you want to delete your Personal Account?</p>
+          <button type="button" class="btn-delete" id="deleteBtn" data-i18n="del.btn">DELETE PERSONAL ACCOUNT</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Forgot password modal -->
+  <div class="modal" id="forgotModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle" hidden>
+    <div class="modal-card">
+      <h2 id="forgotTitle" data-i18n="forgot.title">Reset your password</h2>
+      <p class="muted" data-i18n="forgot.desc">Enter your email address and we’ll send you a link to reset your password.</p>
+      <div class="field">
+        <label for="forgotEmail" data-i18n="forgot.email">Email Address</label>
+        <div class="input-box"><input id="forgotEmail" type="email" placeholder="name@email.com" autocomplete="email"></div>
+        <p class="err" id="errForgot" role="alert"></p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" data-close data-i18n="common.cancel">Cancel</button>
+        <button type="button" class="btn-save" id="forgotSend" data-i18n="forgot.send">Send reset link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div class="modal" id="deleteModal" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalBody" hidden>
+    <div class="modal-card">
+      <h2 id="deleteModalTitle" data-i18n="del.modal.title">Delete your account?</h2>
+      <p class="muted" id="deleteModalBody" data-i18n="del.modal.body">This permanently removes your personal account and can’t be undone.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" data-close data-i18n="del.keep">Keep my account</button>
+        <button type="button" class="btn-delete big" id="deleteConfirm" data-i18n="del.confirm">Yes, delete account</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="i18n.js"></script>
+  <script>
+/* MEDIC CARE – Settings page (Account Settings) */
+
+const $ = (id) => document.getElementById(id);
+const t = (k, v) => (window.I18N ? I18N.t(k, v) : k);
+const { setSidebar } = Auth.initSidebar();      // sidebar, search, profile and logout live in auth.js
+
+/* --- Toast --- */
+let toastTimer;
+function toast(msg, type) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.toggle("success", type === "success");
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
+}
+
+/* --- Modals --- */
+function openModal(id) { $(id).hidden = false; }
+function closeModals() { document.querySelectorAll(".modal").forEach((m) => (m.hidden = true)); }
+document.querySelectorAll(".modal").forEach((m) => {
+  m.addEventListener("click", (e) => { if (e.target === m || e.target.hasAttribute("data-close")) closeModals(); });
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModals(); });
+
+/* --- Language --- */
+const langSelect = $("langSelect");
+langSelect.value = window.I18N ? I18N.getLang() : "en";
+langSelect.addEventListener("change", () => {
+  if (window.I18N) I18N.setLang(langSelect.value);   // changes every page of the website
+  toast(t("lang.changed"));
+});
+
+/* --- Change password --- */
+function setErr(inputId, errId, msg) {
+  $(errId).textContent = msg;
+  $(inputId).closest(".input-box").classList.toggle("invalid", !!msg);
+}
+function clearPwErrors() {
+  setErr("currentPw", "errCurrent", "");
+  setErr("newPw", "errNew", "");
+  setErr("confirmPw", "errConfirm", "");
+}
+
+$("pwForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const cur = $("currentPw").value, pw = $("newPw").value, conf = $("confirmPw").value;
+  let eCur = "", eNew = "", eConf = "";
+
+  if (!cur) eCur = t("pw.err.current.empty");
+  else if (!Auth.checkPassword(cur)) eCur = t("pw.err.current.wrong");
+
+  if (!pw) eNew = t("pw.err.new.empty");
+  else if (pw.length < 8) eNew = t("pw.err.new.len");
+  else if (!/[A-Za-z]/.test(pw) || !/\d/.test(pw)) eNew = t("pw.err.new.mix");
+  else if (!eCur && pw === cur) eNew = t("pw.err.new.same");
+
+  if (!conf) eConf = t("pw.err.confirm.empty");
+  else if (!eNew && pw !== conf) eConf = t("pw.err.confirm.match");
+
+  setErr("currentPw", "errCurrent", eCur);
+  setErr("newPw", "errNew", eNew);
+  setErr("confirmPw", "errConfirm", eConf);
+  if (eCur || eNew || eConf) {
+    $(eCur ? "currentPw" : eNew ? "newPw" : "confirmPw").focus();
+    return;
+  }
+
+  Auth.setPassword(pw);               // replace with a call to your backend when you have one
+  $("pwForm").reset();
+  toast(t("pw.success"), "success");
+});
+["currentPw", "newPw", "confirmPw"].forEach((id) => $(id).addEventListener("input", clearPwErrors));
+
+/* --- Forgot password --- */
+$("forgotBtn").addEventListener("click", () => {
+  const p = Auth.profile();
+  $("forgotEmail").value = p.email || "";
+  setErr("forgotEmail", "errForgot", "");
+  openModal("forgotModal");
+  $("forgotEmail").focus();
+});
+$("forgotSend").addEventListener("click", () => {
+  const email = $("forgotEmail").value.trim();
+  if (!Auth.isEmail(email)) return setErr("forgotEmail", "errForgot", t("forgot.err"));
+  // TODO: ask your backend to email a reset link to `email`
+  closeModals();
+  toast(t("forgot.sent", { email }));
+});
+$("forgotEmail").addEventListener("input", () => setErr("forgotEmail", "errForgot", ""));
+
+/* --- Delete account --- */
+$("deleteBtn").addEventListener("click", () => openModal("deleteModal"));
+$("deleteConfirm").addEventListener("click", () => {
+  Auth.deleteAccount();               // removes the account, its saved data and the login session
+  closeModals();
+  toast(t("del.done"), "success");
+  setTimeout(() => { window.location.href = Auth.LOGIN; }, 1600);
+});
+
+/* ---- Language changed (here or in another tab) --- */
+window.addEventListener("langchange", () => {
+  if (window.I18N) langSelect.value = I18N.getLang();
+  clearPwErrors();
+  setErr("forgotEmail", "errForgot", "");
+});
+  </script>
+</body>
+</html>
