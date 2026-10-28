@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-requires-login>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,205 +11,700 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-/* ===== MEDIC CARE design tokens (shared across pages) ===== */
-:root {
-  --navy: #1b3a8f;
-  --navy-deep: #16296b;
-  --header-bg: #b4bfdc;
-  --blue: #3f5fcf;
-  --blue-link: #3b4fd8;
-  --bg-top: #eff0f5;
-  --bg-bottom: #7b9bef;
-  --card: #f9f9f9;
-  --info: #d9d9d9;
-  --text: #1c1c1e;
-  --title: #2b2b30;
-  --muted: #5d6270;
-  --green-bg: #aee6bd;  --green-tx: #1f8a43;
-  --yellow-bg: #fbe98a; --yellow-tx: #b3830d;
-  --red-bg: #f6b9b9;    --red-tx: #b32626;
-  --radius-pill: 999px;
-  --radius-card: 14px;
-  --radius-box: 12px;
-  --shadow-card: 0 2px 6px rgba(40, 55, 110, .35);
-  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-}
+    /* ===== MEDIC CARE design tokens (shared across pages) ===== */
+    :root {
+      --navy: #1b3a8f;
+      --navy-deep: #16296b;
+      --header-bg: #b4bfdc;
+      --blue: #3f5fcf;
+      --blue-link: #3b4fd8;
+      --bg-top: #eff0f5;
+      --bg-bottom: #7b9bef;
+      --card: #f9f9f9;
+      --info: #d9d9d9;
+      --text: #1c1c1e;
+      --title: #2b2b30;
+      --muted: #5d6270;
+      --green-bg: #aee6bd;
+      --green-tx: #1f8a43;
+      --yellow-bg: #fbe98a;
+      --yellow-tx: #b3830d;
+      --red-bg: #f6b9b9;
+      --red-tx: #b32626;
+      --radius-pill: 999px;
+      --radius-card: 14px;
+      --radius-box: 12px;
+      --shadow-card: 0 2px 6px rgba(40, 55, 110, .35);
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
 
-* { box-sizing: border-box; }
-html { min-height: 100%; }
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: var(--font);
-  color: var(--text);
-  background: linear-gradient(180deg, var(--bg-top) 0%, #c3cdf0 55%, var(--bg-bottom) 100%) fixed;
-}
-button, input, select { font: inherit; }
-button { cursor: pointer; }
-:focus-visible { outline: 3px solid #5b7bd6; outline-offset: 2px; }
+    * {
+      box-sizing: border-box;
+    }
 
-/* ===== Layout ===== */
-.page { display: flex; flex-direction: column; min-height: 100vh; max-width: 980px; margin: 0 auto; padding: 18px min(4.4%, 43.12px) 60px; }
-main { display: flex; flex: 1; flex-direction: column; }
+    html {
+      min-height: 100%;
+    }
 
-/* ===== Header ===== */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 38px; padding: 0 16px;
-  background: var(--header-bg);
-  border-radius: var(--radius-pill);
-}
-.icon-btn { background: none; border: 0; color: var(--navy); padding: 6px; display: grid; place-items: center; border-radius: 8px; }
-.icon-btn.light { color: #fff; font-size: 30px; line-height: 1; }
-.brand { display: flex; align-items: center; gap: 6px; }
-.brand-name { font-weight: 800; font-size: 22px; letter-spacing: .3px; color: #0e2a7d; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg-top) 0%, #c3cdf0 55%, var(--bg-bottom) 100%) fixed;
+    }
 
-/* ===== Page head ===== */
-.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 30px 8px 28px; }
-h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: .6px; color: var(--title); }
+    button,
+    input,
+    select {
+      font: inherit;
+    }
 
-.btn-primary {
-  background: var(--blue); color: #fff; border: 0; border-radius: 4px;
-  padding: 9px 14px; font-weight: 600; font-size: 15px; white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(30, 50, 130, .3);
-  transition: background .15s, transform .1s;
-}
-.btn-primary { display: inline-block; text-decoration: none; }
-.btn-primary:hover { background: #3453bb; }
-.btn-primary:active { transform: translateY(1px); }
-.btn-ghost { background: transparent; border: 1px solid #b7bdd0; color: var(--text); border-radius: 4px; padding: 9px 14px; font-weight: 500; }
-.btn-ghost:hover { background: #eef0f7; }
-.btn-danger { background: #c53030; color: #fff; border: 0; border-radius: 4px; padding: 9px 14px; font-weight: 600; }
-.btn-danger:hover { background: #a82626; }
+    button {
+      cursor: pointer;
+    }
 
-/* ===== Appointment grid & cards ===== */
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 50px 58px; padding: 0; margin: 0 1px; }
-.card {
-  background: var(--card);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  padding: 12px 18px 14px 14px;
-  animation: pop .25s ease;
-}
-.card.cancelled { opacity: .72; }
-.card.completed { opacity: .85; }
-@keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+    :focus-visible {
+      outline: 3px solid #5b7bd6;
+      outline-offset: 2px;
+    }
 
-.card-top { display: flex; align-items: center; gap: 12px; position: relative; }
-.doc-name { margin: 0; font-size: 16px; font-weight: 600; }
-.doc-spec { margin: 2px 0 0; font-size: 12.5px; font-weight: 500; }
-.badge {
-  position: absolute; top: -2px; right: -4px;
-  font-size: 13px; font-weight: 500; padding: 2px 10px; border-radius: var(--radius-pill);
-}
-.badge.confirmed { background: var(--green-bg); color: var(--green-tx); }
-.badge.pending   { background: var(--yellow-bg); color: var(--yellow-tx); }
-.badge.completed { background: #dfe6fb; color: #1d3f8f; }
-.badge.cancelled { background: var(--red-bg); color: var(--red-tx); }
+    /* ===== Layout ===== */
+    .page {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px min(4.4%, 43.12px) 60px;
+    }
 
-.info {
-  display: flex; gap: 40px; margin: 14px 14px 0;
-  background: var(--info); border-radius: var(--radius-box); padding: 10px 22px 12px;
-  font-size: 16px; font-weight: 500;
-}
-.info small { display: block; font-size: 16px; font-weight: 500; margin-bottom: 1px; }
-.info div:last-child { white-space: nowrap; }
+    main {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+    }
 
-.card-actions { display: flex; margin-top: 12px; }
-.card-actions button { flex: 1; background: none; border: 0; padding: 6px; font-size: 16px; font-weight: 500; }
-.link-reschedule { color: var(--blue-link); }
-.link-cancel { color: #000; }
-.card-actions button:hover:not(:disabled) { text-decoration: underline; }
-.card-actions button:disabled { color: #8a8f9c; cursor: not-allowed; }
+    /* ===== Header ===== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 38px;
+      padding: 0 16px;
+      background: var(--header-bg);
+      border-radius: var(--radius-pill);
+    }
 
-.grid.is-empty { flex: 1; align-content: center; }
-.empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px 0; }
-.empty p { margin: 0 0 16px; }
+    .icon-btn {
+      background: none;
+      border: 0;
+      color: var(--navy);
+      padding: 6px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+    }
 
-/* ===== Sidebar ===== */
-.scrim { position: fixed; inset: 0; background: rgba(10, 18, 50, .45); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 40; }
-.scrim.open { opacity: 1; pointer-events: auto; }
-.sidebar {
-  position: fixed; top: 0; left: 0; bottom: 0; width: min(290px, 86vw); z-index: 50;
-  display: flex; flex-direction: column; padding: 20px 18px 28px;
-  background: #142a6b; box-shadow: 4px 0 22px rgba(10, 20, 60, .35);
-  transform: translateX(-100%); visibility: hidden;
-  transition: transform .35s cubic-bezier(.22, .61, .36, 1), visibility 0s linear .35s;
-}
-.sidebar.open { transform: none; visibility: visible; transition-delay: 0s; }
-.side-profile { display: flex; align-items: center; gap: 12px; color: #fff; padding: 0 2px; }
-.side-avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; overflow: hidden;
-  background: #2a9a92; color: #fff; font-weight: 700; font-size: 16px;
-}
-.side-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.side-info { display: flex; flex-direction: column; min-width: 0; }
-.side-info strong { font-size: 17px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.side-info span { font-size: 11.5px; font-weight: 500; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sidebar .icon-btn.light { margin-left: auto; color: #aab7de; font-size: 28px; padding: 2px 8px; }
-.sidebar .icon-btn.light:hover { color: #fff; }
-.sidebar hr { border: 0; border-top: 2px solid #8d98bd; margin: 18px 0 20px; opacity: .8; }
-.side-search {
-  display: flex; align-items: center; gap: 12px; padding: 11px 14px; margin-bottom: 18px;
-  background: #2b4380; border-radius: 8px; color: #a3b0d6;
-}
-.side-search svg { width: 24px; height: 24px; flex: none; }
-.side-search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: #fff; font-size: 17px; font-weight: 500; padding: 0; }
-.side-search input::placeholder { color: #a3b0d6; opacity: 1; }
-.side-search input::-webkit-search-cancel-button { filter: invert(1); opacity: .6; }
-.side-search:focus-within { box-shadow: 0 0 0 2px #7f9df0; }
-.sidebar nav { flex: 1; overflow-y: auto; }
-.sidebar nav a, .logout {
-  display: flex; align-items: center; gap: 22px; padding: 10px 10px; margin-bottom: 4px;
-  color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; border-radius: 8px; transition: background .15s;
-}
-.sidebar nav a svg, .logout svg { width: 24px; height: 24px; flex: none; color: #8997c4; }
-.sidebar nav a:hover, .logout:hover { background: rgba(255, 255, 255, .09); }
-.sidebar nav a.active { background: rgba(255, 255, 255, .15); }
-.sidebar nav a.active svg { color: #fff; }
-.sidebar nav a[hidden] { display: none; }
-.no-match { color: #a3b0d6; font-size: 14px; padding: 8px 10px; margin: 0; }
+    .icon-btn.light {
+      color: #fff;
+      font-size: 30px;
+      line-height: 1;
+    }
 
-/* ===== Modals ===== */
-.modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(15, 25, 60, .5); }
-.modal[hidden] { display: none; }
-.modal-card { width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius-card); padding: 22px; box-shadow: 0 10px 30px rgba(20, 30, 80, .4); animation: pop .2s ease; }
-.modal-card h2 { margin: 0 0 14px; font-size: 19px; font-weight: 700; color: var(--navy); }
-.modal-card label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
-.modal-card input, .modal-card select {
-  display: block; width: 100%; margin-top: 5px; padding: 9px 10px;
-  border: 1px solid #c4c9db; border-radius: 8px; background: #f8f9fd; color: var(--text); font-size: 15px;
-}
-.modal-card input[readonly] { background: #eceef5; color: var(--muted); }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.muted { color: var(--muted); font-size: 14.5px; margin: 0 0 14px; line-height: 1.5; }
-.error { color: var(--red-tx); font-size: 13.5px; font-weight: 500; min-height: 18px; margin: 0 0 8px; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
-.toast {
-  position: fixed; left: 50%; bottom: 24px; z-index: 80;
-  transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
-  background: var(--navy-deep); color: #fff; padding: 11px 18px; border-radius: var(--radius-pill);
-  font-size: 14.5px; font-weight: 500; transition: .25s;
-}
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .brand-name {
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: .3px;
+      color: #0e2a7d;
+    }
 
-/* ===== Responsive ===== */
-@media (max-width: 760px) {
-  .grid { grid-template-columns: 1fr; gap: 26px; }
-  .page-head { flex-wrap: wrap; }
-}
-@media (max-width: 420px) {
-  .info { gap: 20px; padding: 10px 16px; font-size: 14.5px; }
-  .info small { font-size: 14.5px; }
-  .badge { position: static; margin-left: auto; align-self: flex-start; }
-  .row { grid-template-columns: 1fr; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *:not(.sidebar):not(.scrim) { animation: none !important; transition: none !important; }
-}
+    /* ===== Page head ===== */
+    .page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 30px 8px 28px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: .6px;
+      color: var(--title);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      border: 0;
+      border-radius: 4px;
+      padding: 9px 14px;
+      font-weight: 600;
+      font-size: 15px;
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(30, 50, 130, .3);
+      transition: background .15s, transform .1s;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover {
+      background: #3453bb;
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #b7bdd0;
+      color: var(--text);
+      border-radius: 4px;
+      padding: 9px 14px;
+      font-weight: 500;
+    }
+
+    .btn-ghost:hover {
+      background: #eef0f7;
+    }
+
+    .btn-danger {
+      background: #c53030;
+      color: #fff;
+      border: 0;
+      border-radius: 4px;
+      padding: 9px 14px;
+      font-weight: 600;
+    }
+
+    .btn-danger:hover {
+      background: #a82626;
+    }
+
+    /* ===== Appointment grid & cards ===== */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 50px 58px;
+      padding: 0;
+      margin: 0 1px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 12px 18px 14px 14px;
+      animation: pop .25s ease;
+    }
+
+    .card.cancelled {
+      opacity: .72;
+    }
+
+    .card.completed {
+      opacity: .85;
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(.97);
+        opacity: 0;
+      }
+
+      to {
+        transform: none;
+        opacity: 1;
+      }
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .doc-name {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .doc-spec {
+      margin: 2px 0 0;
+      font-size: 12.5px;
+      font-weight: 500;
+    }
+
+    .badge {
+      position: absolute;
+      top: -2px;
+      right: -4px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 2px 10px;
+      border-radius: var(--radius-pill);
+    }
+
+    .badge.confirmed {
+      background: var(--green-bg);
+      color: var(--green-tx);
+    }
+
+    .badge.pending {
+      background: var(--yellow-bg);
+      color: var(--yellow-tx);
+    }
+
+    .badge.completed {
+      background: #dfe6fb;
+      color: #1d3f8f;
+    }
+
+    .badge.cancelled {
+      background: var(--red-bg);
+      color: var(--red-tx);
+    }
+
+    .info {
+      display: flex;
+      gap: 40px;
+      margin: 14px 14px 0;
+      background: var(--info);
+      border-radius: var(--radius-box);
+      padding: 10px 22px 12px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .info small {
+      display: block;
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 1px;
+    }
+
+    .info div:last-child {
+      white-space: nowrap;
+    }
+
+    .card-actions {
+      display: flex;
+      margin-top: 12px;
+    }
+
+    .card-actions button {
+      flex: 1;
+      background: none;
+      border: 0;
+      padding: 6px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .link-reschedule {
+      color: var(--blue-link);
+    }
+
+    .link-cancel {
+      color: #000;
+    }
+
+    .card-actions button:hover:not(:disabled) {
+      text-decoration: underline;
+    }
+
+    .card-actions button:disabled {
+      color: #8a8f9c;
+      cursor: not-allowed;
+    }
+
+    .grid.is-empty {
+      flex: 1;
+      align-content: center;
+    }
+
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 0;
+    }
+
+    .empty p {
+      margin: 0 0 16px;
+    }
+
+    /* ===== Sidebar ===== */
+    .scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 18, 50, .45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+      z-index: 40;
+    }
+
+    .scrim.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(290px, 86vw);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 18px 28px;
+      background: #142a6b;
+      box-shadow: 4px 0 22px rgba(10, 20, 60, .35);
+      transform: translateX(-100%);
+      visibility: hidden;
+      transition: transform .35s cubic-bezier(.22, .61, .36, 1), visibility 0s linear .35s;
+    }
+
+    .sidebar.open {
+      transform: none;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+
+    .side-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #fff;
+      padding: 0 2px;
+    }
+
+    .side-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      flex: none;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #2a9a92;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .side-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .side-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .side-info strong {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .side-info span {
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: .3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar .icon-btn.light {
+      margin-left: auto;
+      color: #aab7de;
+      font-size: 28px;
+      padding: 2px 8px;
+    }
+
+    .sidebar .icon-btn.light:hover {
+      color: #fff;
+    }
+
+    .sidebar hr {
+      border: 0;
+      border-top: 2px solid #8d98bd;
+      margin: 18px 0 20px;
+      opacity: .8;
+    }
+
+    .side-search {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      margin-bottom: 18px;
+      background: #2b4380;
+      border-radius: 8px;
+      color: #a3b0d6;
+    }
+
+    .side-search svg {
+      width: 24px;
+      height: 24px;
+      flex: none;
+    }
+
+    .side-search input {
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: 0;
+      outline: 0;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 500;
+      padding: 0;
+    }
+
+    .side-search input::placeholder {
+      color: #a3b0d6;
+      opacity: 1;
+    }
+
+    .side-search input::-webkit-search-cancel-button {
+      filter: invert(1);
+      opacity: .6;
+    }
+
+    .side-search:focus-within {
+      box-shadow: 0 0 0 2px #7f9df0;
+    }
+
+    .sidebar nav {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar nav a,
+    .logout {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 10px 10px;
+      margin-bottom: 4px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 8px;
+      transition: background .15s;
+    }
+
+    .sidebar nav a svg,
+    .logout svg {
+      width: 24px;
+      height: 24px;
+      flex: none;
+      color: #8997c4;
+    }
+
+    .sidebar nav a:hover,
+    .logout:hover {
+      background: rgba(255, 255, 255, .09);
+    }
+
+    .sidebar nav a.active {
+      background: rgba(255, 255, 255, .15);
+    }
+
+    .sidebar nav a.active svg {
+      color: #fff;
+    }
+
+    .sidebar nav a[hidden] {
+      display: none;
+    }
+
+    .no-match {
+      color: #a3b0d6;
+      font-size: 14px;
+      padding: 8px 10px;
+      margin: 0;
+    }
+
+    /* ===== Modals ===== */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 25, 60, .5);
+    }
+
+    .modal[hidden] {
+      display: none;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: var(--radius-card);
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(20, 30, 80, .4);
+      animation: pop .2s ease;
+    }
+
+    .modal-card h2 {
+      margin: 0 0 14px;
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .modal-card label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .modal-card input,
+    .modal-card select {
+      display: block;
+      width: 100%;
+      margin-top: 5px;
+      padding: 9px 10px;
+      border: 1px solid #c4c9db;
+      border-radius: 8px;
+      background: #f8f9fd;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .modal-card input[readonly] {
+      background: #eceef5;
+      color: var(--muted);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 14.5px;
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+
+    .error {
+      color: var(--red-tx);
+      font-size: 13.5px;
+      font-weight: 500;
+      min-height: 18px;
+      margin: 0 0 8px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 80;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      background: var(--navy-deep);
+      color: #fff;
+      padding: 11px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 14.5px;
+      font-weight: 500;
+      transition: .25s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 26px;
+      }
+
+      .page-head {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .info {
+        gap: 20px;
+        padding: 10px 16px;
+        font-size: 14.5px;
+      }
+
+      .info small {
+        font-size: 14.5px;
+      }
+
+      .badge {
+        position: static;
+        margin-left: auto;
+        align-self: flex-start;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *:not(.sidebar):not(.scrim) {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Sidebar -->
@@ -220,37 +716,71 @@ h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: .6px; color: 
         <strong id="sideName">Final Project</strong>
         <span id="sideEmail">finalproject@gmail.com</span>
       </div>
-      <button class="icon-btn light" id="closeSidebar" aria-label="Close menu" data-i18n-aria="menu.close">&times;</button>
+      <button class="icon-btn light" id="closeSidebar" aria-label="Close menu"
+        data-i18n-aria="menu.close">&times;</button>
     </div>
     <hr>
     <label class="side-search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg>
-      <input type="search" id="navSearch" placeholder="Search..." data-i18n-ph="nav.search" aria-label="Search menu" autocomplete="off">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+        aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="6.5" />
+        <path d="m20 20-4.8-4.8" />
+      </svg>
+      <input type="search" id="navSearch" placeholder="Search..." data-i18n-ph="nav.search" aria-label="Search menu"
+        autocomplete="off">
     </label>
     <nav id="nav">
-      <a href="index.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11.5 12 3l9 8.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.dashboard">Dashboard</span></a>
-      <a href="profile.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.5 3.8-7 8.5-7s8.5 2.5 8.5 7z"/></svg><span data-i18n="nav.profile">Profile</span></a>
-      <a href="appointments.html" class="active" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zM5 9h14v11H5z"/><path d="M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 15h2v2H7zm4 0h2v2h-2z"/></svg><span data-i18n="nav.appointment">Appointment</span></a>
-      <a href="medical-history.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg><span data-i18n="nav.history">Medical History</span></a>
-      <a href="settings.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span data-i18n="nav.settings">Settings</span></a>
+      <a href="index.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3 11.5 12 3l9 8.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+        </svg><span data-i18n="nav.dashboard">Dashboard</span></a>
+      <a href="profile.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="7.5" r="4.5" />
+          <path d="M3.5 21c0-4.5 3.8-7 8.5-7s8.5 2.5 8.5 7z" />
+        </svg><span data-i18n="nav.profile">Profile</span></a>
+      <a href="appointment.html" class="active" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor"
+          aria-hidden="true">
+          <path fill-rule="evenodd"
+            d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zM5 9h14v11H5z" />
+          <path d="M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 15h2v2H7zm4 0h2v2h-2z" />
+        </svg><span data-i18n="nav.appointment">Appointment</span></a>
+      <a href="medical_history.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z" />
+        </svg><span data-i18n="nav.history">Medical History</span></a>
+      <a href="settings.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+        </svg><span data-i18n="nav.settings">Settings</span></a>
       <p class="no-match" id="noMatch" hidden data-i18n="nav.nomatch">No matching pages</p>
     </nav>
-    <a href="login.html" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5M8 8l-4 4 4 4M4 12h11"/></svg><span data-i18n="nav.logout">Logout</span></a>
+    <a href="login.html" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5M8 8l-4 4 4 4M4 12h11" />
+      </svg><span data-i18n="nav.logout">Logout</span></a>
   </aside>
 
   <div class="page">
     <!-- Header -->
     <header class="topbar">
-      <button class="icon-btn" id="menuBtn" aria-label="Open menu" data-i18n-aria="menu.open" aria-expanded="false" aria-controls="sidebar">
-        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M2 5h18M2 11h18M2 17h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <button class="icon-btn" id="menuBtn" aria-label="Open menu" data-i18n-aria="menu.open" aria-expanded="false"
+        aria-controls="sidebar">
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+          <path d="M2 5h18M2 11h18M2 17h18" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        </svg>
       </button>
       <div class="brand">
         <span class="brand-name">MEDIC CARE</span>
         <svg class="brand-logo" width="30" height="34" viewBox="0 0 34 38" aria-hidden="true">
-          <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb4c9"/><stop offset="1" stop-color="#2b4fb8"/></linearGradient></defs>
-          <path d="M17 1.5 31 6.5v11c0 9-6 15.5-14 19C9 33 3 26.5 3 17.5v-11z" fill="url(#sg)" stroke="#223c93" stroke-width="2"/>
-          <path d="M17 8.5 26 12v6c0 5.5-3.5 9.5-9 12-5.5-2.5-9-6.5-9-12v-6z" fill="#dff3f7" opacity=".35"/>
-          <path d="M14.5 12.5h5v4h4v5h-4v4h-5v-4h-4v-5h4z" fill="#fff"/>
+          <defs>
+            <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2fb4c9" />
+              <stop offset="1" stop-color="#2b4fb8" />
+            </linearGradient>
+          </defs>
+          <path d="M17 1.5 31 6.5v11c0 9-6 15.5-14 19C9 33 3 26.5 3 17.5v-11z" fill="url(#sg)" stroke="#223c93"
+            stroke-width="2" />
+          <path d="M17 8.5 26 12v6c0 5.5-3.5 9.5-9 12-5.5-2.5-9-6.5-9-12v-6z" fill="#dff3f7" opacity=".35" />
+          <path d="M14.5 12.5h5v4h4v5h-4v4h-5v-4h-4v-5h4z" fill="#fff" />
         </svg>
       </div>
     </header>
@@ -298,74 +828,74 @@ h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: .6px; color: 
 
   <script src="i18n.js"></script>
   <script>
-/* MEDIC CARE – My Appointment page (localStorage via auth.js, walang database) */
+    /* MEDIC CARE – My Appointment page (localStorage via auth.js, walang database) */
 
-/* ---------- Data ---------- */
-// To use real photos, add  photo: "images/dr-name.jpg"  to a doctor below.
-const DOCTORS = [
-  { id: "celestia",  name: "Dr. Celestia Santos", spec: "OB GYN",           skin: "#8a5a3c", hair: "#1d1410", style: "bun"   },
-  { id: "rich",      name: "Dr. Rich Reyes",      spec: "PEDIATRICS",       skin: "#d9a982", hair: "#3a2a20", style: "short" },
-  { id: "sebastian", name: "Dr. Sebastian Reed",  spec: "CARDIOLOGY",       skin: "#e6bd9a", hair: "#9a9a9a", style: "short" },
-  { id: "mich",      name: "Dr. Mich Collins",    spec: "OB GYN",           skin: "#e8c3a0", hair: "#14100d", style: "long"  },
-  { id: "ana",       name: "Dr. Ana Lim",         spec: "DERMATOLOGY",      skin: "#dcae88", hair: "#241a14", style: "long"  },
-  { id: "paolo",     name: "Dr. Paolo Cruz",      spec: "GENERAL MEDICINE", skin: "#c99772", hair: "#1d1612", style: "short" },
-];
+    /* ---------- Data ---------- */
+    // To use real photos, add  photo: "images/dr-name.jpg"  to a doctor below.
+    const DOCTORS = [
+      { id: "celestia", name: "Dr. Celestia Santos", spec: "OB GYN", skin: "#8a5a3c", hair: "#1d1410", style: "bun" },
+      { id: "rich", name: "Dr. Rich Reyes", spec: "PEDIATRICS", skin: "#d9a982", hair: "#3a2a20", style: "short" },
+      { id: "sebastian", name: "Dr. Sebastian Reed", spec: "CARDIOLOGY", skin: "#e6bd9a", hair: "#9a9a9a", style: "short" },
+      { id: "mich", name: "Dr. Mich Collins", spec: "OB GYN", skin: "#e8c3a0", hair: "#14100d", style: "long" },
+      { id: "ana", name: "Dr. Ana Lim", spec: "DERMATOLOGY", skin: "#dcae88", hair: "#241a14", style: "long" },
+      { id: "paolo", name: "Dr. Paolo Cruz", spec: "GENERAL MEDICINE", skin: "#c99772", hair: "#1d1612", style: "short" },
+    ];
 
-const SLOTS = ["8:00AM - 9:00AM", "9:00AM - 10:00AM", "10:00AM - 11:00AM", "11:00AM - 12:00PM",
-               "1:00PM - 2:00PM", "2:00PM - 3:00PM", "3:00PM - 4:00PM"];   // doctors are available 8:00 AM - 4:00 PM
+    const SLOTS = ["8:00AM - 9:00AM", "9:00AM - 10:00AM", "10:00AM - 11:00AM", "11:00AM - 12:00PM",
+      "1:00PM - 2:00PM", "2:00PM - 3:00PM", "3:00PM - 4:00PM"];   // doctors are available 8:00 AM - 4:00 PM
 
-// Appointments are saved per account, so they stay when you move between pages.
-const appointments = Auth.getAppointments();
-const save = () => Auth.saveAppointments(appointments);
+    // Appointments are saved per account, so they stay when you move between pages.
+    const appointments = Auth.getAppointments();
+    const save = () => Auth.saveAppointments(appointments);
 
-/* ---------- Helpers ---------- */
-const $ = (id) => document.getElementById(id);
-const t = (k, v) => (window.I18N ? I18N.t(k, v) : k);
-const monthNames = () => (window.I18N ? I18N.months() : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]);
-const docById = (id) => DOCTORS.find((d) => d.id === id);
+    /* ---------- Helpers ---------- */
+    const $ = (id) => document.getElementById(id);
+    const t = (k, v) => (window.I18N ? I18N.t(k, v) : k);
+    const monthNames = () => (window.I18N ? I18N.months() : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]);
+    const docById = (id) => DOCTORS.find((d) => d.id === id);
 
-// Doctors from the booking page are stored by name; give them a plain avatar
-const SKINS = ["#8a5a3c", "#d9a982", "#e6bd9a", "#e8c3a0", "#dcae88", "#c99772"];
-function docOf(a) {
-  const known = docById(a.doctor);
-  if (known) return known;
-  const name = a.doctorName || "Doctor";
-  const n = [...name].reduce((s, c) => s + c.charCodeAt(0), 0);
-  return { id: name, name, spec: a.spec || "", skin: SKINS[n % SKINS.length], hair: "#241a14", style: n % 2 ? "short" : "long" };
-}
+    // Doctors from the booking page are stored by name; give them a plain avatar
+    const SKINS = ["#8a5a3c", "#d9a982", "#e6bd9a", "#e8c3a0", "#dcae88", "#c99772"];
+    function docOf(a) {
+      const known = docById(a.doctor);
+      if (known) return known;
+      const name = a.doctorName || "Doctor";
+      const n = [...name].reduce((s, c) => s + c.charCodeAt(0), 0);
+      return { id: name, name, spec: a.spec || "", skin: SKINS[n % SKINS.length], hair: "#241a14", style: n % 2 ? "short" : "long" };
+    }
 
-function fmtDate(iso) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return `${monthNames()[m - 1]} ${d}, ${y}`;
-}
-function todayISO() {
-  const n = new Date();
-  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
-}
+    function fmtDate(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      return `${monthNames()[m - 1]} ${d}, ${y}`;
+    }
+    function todayISO() {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+    }
 
-let toastTimer;
-function toast(msg) {
-  const el = $("toast");
-  el.textContent = msg;
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
-}
+    let toastTimer;
+    function toast(msg) {
+      const el = $("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+    }
 
-/* ---------- Render ---------- */
-function render() {
-  const grid = $("grid");
-  if (!appointments.length) {
-    grid.classList.add("is-empty");
-    grid.innerHTML = '<div class="empty"><p>No appointments yet.</p><a class="btn-primary" href="booking.html">Book now</a></div>';
-    return;
-  }
-  grid.classList.remove("is-empty");
-  grid.innerHTML = appointments.map((a) => {
-    const d = docOf(a);
-    const status = (a.status || "Pending").toLowerCase();
-    const off = (status === "cancelled" || status === "completed" || Auth.recordState(a) === "Completed") ? "disabled" : "";
-    return `
+    /* ---------- Render ---------- */
+    function render() {
+      const grid = $("grid");
+      if (!appointments.length) {
+        grid.classList.add("is-empty");
+        grid.innerHTML = '<div class="empty"><p>No appointments yet.</p><a class="btn-primary" href="booking.html">Book now</a></div>';
+        return;
+      }
+      grid.classList.remove("is-empty");
+      grid.innerHTML = appointments.map((a) => {
+        const d = docOf(a);
+        const status = (a.status || "Pending").toLowerCase();
+        const off = (status === "cancelled" || status === "completed" || Auth.recordState(a) === "Completed") ? "disabled" : "";
+        return `
     <article class="card ${status}" data-id="${a.id}">
       <div class="card-top">
         <div>
@@ -383,88 +913,89 @@ function render() {
         <button class="link-cancel" data-act="cancel" ${off}>${t("appt.cancel")}</button>
       </div>
     </article>`;
-  }).join("");
-}
+      }).join("");
+    }
 
-/* ---------- Sidebar (shared, see auth.js) ---------- */
-const { setSidebar } = Auth.initSidebar();
+    /* ---------- Sidebar (shared, see auth.js) ---------- */
+    const { setSidebar } = Auth.initSidebar();
 
-/* ---------- Modals ---------- */
-function openModal(id) { $(id).hidden = false; }
-function closeModals() { document.querySelectorAll(".modal").forEach((m) => (m.hidden = true)); }
-document.querySelectorAll(".modal").forEach((m) => {
-  m.addEventListener("click", (e) => { if (e.target === m || e.target.hasAttribute("data-close")) closeModals(); });
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeModals(); setSidebar(false); }
-});
+    /* ---------- Modals ---------- */
+    function openModal(id) { $(id).hidden = false; }
+    function closeModals() { document.querySelectorAll(".modal").forEach((m) => (m.hidden = true)); }
+    document.querySelectorAll(".modal").forEach((m) => {
+      m.addEventListener("click", (e) => { if (e.target === m || e.target.hasAttribute("data-close")) closeModals(); });
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { closeModals(); setSidebar(false); }
+    });
 
-function fillSlots(select, selected) {
-  select.innerHTML = SLOTS.map((s) => `<option${s === selected ? " selected" : ""}>${s}</option>`).join("");
-}
-function isTaken(date, time, ignoreId) {   // a date + time can only be booked once
-  return appointments.some((a) => a.id !== ignoreId && a.date === date && a.time === time && a.status !== "Cancelled");
-}
+    function fillSlots(select, selected) {
+      select.innerHTML = SLOTS.map((s) => `<option${s === selected ? " selected" : ""}>${s}</option>`).join("");
+    }
+    function isTaken(date, time, ignoreId) {   // a date + time can only be booked once
+      return appointments.some((a) => a.id !== ignoreId && a.date === date && a.time === time && a.status !== "Cancelled");
+    }
 
-/* ----- Reschedule & Cancel (opened from cards) ----- */
-let activeId = null;
-$("grid").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-act]");
-  if (!btn || btn.disabled) return;
-  activeId = Number(btn.closest(".card").dataset.id);
-  const a = appointments.find((x) => x.id === activeId);
-  if (!a) return;
-  const d = docOf(a);
-  if (btn.dataset.act === "resched") {
-    $("reschWho").textContent = t("resch.who", { name: d.name, spec: d.spec, date: fmtDate(a.date), time: a.time });
-    $("reschDate").min = todayISO();
-    $("reschDate").value = a.date;
-    fillSlots($("reschTime"), a.time);
-    $("reschError").textContent = "";
-    openModal("reschModal");
-  } else {
-    $("cancelWho").textContent = t("cancel.who", { name: d.name, spec: d.spec, date: fmtDate(a.date), time: a.time });
-    openModal("cancelModal");
-  }
-});
+    /* ----- Reschedule & Cancel (opened from cards) ----- */
+    let activeId = null;
+    $("grid").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-act]");
+      if (!btn || btn.disabled) return;
+      activeId = Number(btn.closest(".card").dataset.id);
+      const a = appointments.find((x) => x.id === activeId);
+      if (!a) return;
+      const d = docOf(a);
+      if (btn.dataset.act === "resched") {
+        $("reschWho").textContent = t("resch.who", { name: d.name, spec: d.spec, date: fmtDate(a.date), time: a.time });
+        $("reschDate").min = todayISO();
+        $("reschDate").value = a.date;
+        fillSlots($("reschTime"), a.time);
+        $("reschError").textContent = "";
+        openModal("reschModal");
+      } else {
+        $("cancelWho").textContent = t("cancel.who", { name: d.name, spec: d.spec, date: fmtDate(a.date), time: a.time });
+        openModal("cancelModal");
+      }
+    });
 
-$("reschConfirm").addEventListener("click", () => {
-  const a = appointments.find((x) => x.id === activeId);
-  if (!a) return;
-  const date = $("reschDate").value, time = $("reschTime").value;
-  if (!date) return ($("reschError").textContent = t("err.newdate"));
-  if (date < todayISO()) return ($("reschError").textContent = t("err.past"));
-  if (isTaken(date, time, a.id)) return ($("reschError").textContent = t("err.taken"));
-  a.date = date; a.time = time;
-  save();
-  render();
-  closeModals();
-  toast(t("toast.rescheduled"));
-});
+    $("reschConfirm").addEventListener("click", () => {
+      const a = appointments.find((x) => x.id === activeId);
+      if (!a) return;
+      const date = $("reschDate").value, time = $("reschTime").value;
+      if (!date) return ($("reschError").textContent = t("err.newdate"));
+      if (date < todayISO()) return ($("reschError").textContent = t("err.past"));
+      if (isTaken(date, time, a.id)) return ($("reschError").textContent = t("err.taken"));
+      a.date = date; a.time = time;
+      save();
+      render();
+      closeModals();
+      toast(t("toast.rescheduled"));
+    });
 
-$("cancelConfirm").addEventListener("click", () => {
-  const a = appointments.find((x) => x.id === activeId);
-  if (!a) return;
-  a.status = "Cancelled";
-  save();
-  render();
-  closeModals();
-  toast(t("toast.cancelled"));
-});
+    $("cancelConfirm").addEventListener("click", () => {
+      const a = appointments.find((x) => x.id === activeId);
+      if (!a) return;
+      a.status = "Cancelled";
+      save();
+      render();
+      closeModals();
+      toast(t("toast.cancelled"));
+    });
 
-/* ---------- Init ---------- */
-render();
+    /* ---------- Init ---------- */
+    render();
 
-// Old links to "?book=1" now go straight to the booking page
-const params = new URLSearchParams(location.search);
-if (params.get("book") === "1") location.replace("booking.html");
-if (params.get("booked") === "1") {
-  toast(t("toast.booked"));
-  history.replaceState(null, "", location.pathname);
-}
+    // Old links to "?book=1" now go straight to the booking page
+    const params = new URLSearchParams(location.search);
+    if (params.get("book") === "1") location.replace("booking.html");
+    if (params.get("booked") === "1") {
+      toast(t("toast.booked"));
+      history.replaceState(null, "", location.pathname);
+    }
 
-// Re-draw cards when the language changes
-window.addEventListener("langchange", render);
+    // Re-draw cards when the language changes
+    window.addEventListener("langchange", render);
   </script>
 </body>
+
 </html>

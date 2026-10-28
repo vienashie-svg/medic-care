@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-guest-only>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -30,7 +31,7 @@
     }
 
     /* ===== Page layout ===== */
-     .page {
+    .page {
       display: flex;
       min-height: 100vh;
       width: 100%;
@@ -38,7 +39,7 @@
       overflow-y: auto;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #f0f4fa 0%, #dbe5f7 40%, #b8cef2 100%);
+      background: linear-gradient(135deg, #e6edf7 0%, #afc8f3 40%, #8cb0eb 100%);
       padding: 24px;
     }
 
@@ -191,13 +192,14 @@
 
     /* ===== Popups (forgot password / check email) ===== */
     .overlay {
-      position: absolute;
+      position: fixed;
       inset: 0;
       display: none;
       align-items: center;
       justify-content: center;
       background: linear-gradient(90deg, #dcdcdc 0%, #d6d8de 25%, #7f9cf0 70%, #0b57e8 100%);
-      padding: 16px;
+      padding: clamp(16px, 4vw, 32px);
+      overflow-y: auto;
       z-index: 5;
     }
 
@@ -207,34 +209,45 @@
 
     .card {
       width: 100%;
-      max-width: 265px;
+      max-width: 460px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
       background: linear-gradient(180deg, #a7b8f2, #dcdcdc);
       border: 1px solid #888;
-      border-radius: 14px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-      padding: 34px 22px 24px;
+      border-radius: 20px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+      padding: clamp(28px, 6vw, 44px);
       text-align: center;
     }
 
     .card h2 {
-      margin: 0 0 4px;
-      font-size: 19px;
+      margin: 0 0 12px;
+      font-size: clamp(24px, 5vw, 30px);
+      line-height: 1.2;
       font-weight: 700;
     }
 
     .card p {
-      margin: 0 0 20px;
-      font-size: 9.5px;
+      margin: 0 0 28px;
+      font-size: 16px;
+      line-height: 1.55;
     }
 
     .card .field {
       text-align: left;
-      margin-bottom: 14px;
+      margin-bottom: 20px;
+    }
+
+    .card label {
+      font-size: 15px;
+      margin-bottom: 8px;
     }
 
     .card input {
       background: rgba(255, 255, 255, 0.25);
       font-style: italic;
+      height: 54px;
+      font-size: 16px;
     }
 
     .card input:not(:placeholder-shown) {
@@ -243,12 +256,12 @@
 
     .wide {
       width: 100%;
-      height: 34px;
+      min-height: 50px;
       border: 0;
       border-radius: 999px;
       background: #5b7bd5;
       color: #fff;
-      font: 500 13px Inter, sans-serif;
+      font: 700 16px Inter, sans-serif;
       cursor: pointer;
     }
 
@@ -259,8 +272,8 @@
     .back {
       display: inline-flex;
       gap: 8px;
-      margin-top: 18px;
-      font-size: 12px;
+      margin-top: 22px;
+      font-size: 14px;
       color: var(--ink);
     }
 
@@ -314,6 +327,31 @@
         display: none;
       }
     }
+
+    @supports (height: 100dvh) {
+      .card {
+        max-height: calc(100dvh - 32px);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .overlay {
+        padding: 12px;
+      }
+
+      .card {
+        max-height: calc(100vh - 24px);
+        padding: 28px 22px;
+      }
+    }
+
+    @supports (height: 100dvh) {
+      @media (max-width: 420px) {
+        .card {
+          max-height: calc(100dvh - 24px);
+        }
+      }
+    }
   </style>
 </head>
 
@@ -327,17 +365,19 @@
 
         <label for="email" data-i18n="log.id">Email or Phone Number</label>
         <div class="field">
-          <input id="email" type="text" placeholder="Enter your email or phone number" data-i18n-ph="log.id.ph" autocomplete="username">
+          <input id="email" type="text" placeholder="Enter your email or phone number" data-i18n-ph="log.id.ph"
+            autocomplete="username">
         </div>
         <div class="msg" id="emailMsg"></div>
 
         <label for="pw" data-i18n="log.pw">Password</label>
         <div class="field">
-          <input id="pw" type="password" placeholder="Enter your password" data-i18n-ph="log.pw.ph" autocomplete="current-password" style="padding-right:40px">
+          <input id="pw" type="password" placeholder="Enter your password" data-i18n-ph="log.pw.ph"
+            autocomplete="current-password" style="padding-right:40px">
           <button type="button" class="eye" id="eye" aria-label="Show password">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
-              <circle id="pupil" cx="12" cy="12" r="3" fill="#444"/>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+              <circle id="pupil" cx="12" cy="12" r="3" fill="#444" />
             </svg>
           </button>
         </div>
@@ -369,7 +409,8 @@
         </div>
 
         <button class="wide" type="submit" data-i18n="log.f.send">Send Email</button>
-        <button type="button" class="linkbtn back" id="backLogin" style="color:#111" data-i18n="log.f.back">&lt; Back to Login</button>
+        <button type="button" class="linkbtn back" id="backLogin" style="color:#111" data-i18n="log.f.back">&lt; Back to
+          Login</button>
       </form>
     </div>
 
@@ -377,10 +418,10 @@
     <div class="overlay" id="checkModal">
       <div class="card">
         <svg class="mail" width="42" height="36" viewBox="0 0 42 36" fill="none">
-          <rect x="2" y="8" width="32" height="24" rx="3" fill="#fff" stroke="#111" stroke-width="3"/>
-          <path d="M3 11l15 11 15-11" stroke="#111" stroke-width="3" fill="none"/>
-          <circle cx="33" cy="9" r="8" fill="#111"/>
-          <path d="M29 9l3 3 5-6" stroke="#fff" stroke-width="2" fill="none"/>
+          <rect x="2" y="8" width="32" height="24" rx="3" fill="#fff" stroke="#111" stroke-width="3" />
+          <path d="M3 11l15 11 15-11" stroke="#111" stroke-width="3" fill="none" />
+          <circle cx="33" cy="9" r="8" fill="#111" />
+          <path d="M29 9l3 3 5-6" stroke="#fff" stroke-width="2" fill="none" />
         </svg>
 
         <h2 data-i18n="log.c.title">Check your email!</h2>
@@ -390,7 +431,8 @@
 
         <button class="resend" id="resend" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5">
-            <path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>
+            <path d="M21 12a9 9 0 1 1-3-6.7" />
+            <path d="M21 3v6h-6" />
           </svg>
           <span id="resendTxt" data-i18n="log.c.resend">Resend email</span>
         </button>
@@ -402,229 +444,263 @@
   <div class="toast" id="toast"></div>
 
   <script>
-/* Login page. Needs auth.js and languages.js loaded first. */
+    /* Login page. Needs auth.js and languages.js loaded first. */
 
-const byId = (id) => document.getElementById(id);
+    const byId = (id) => document.getElementById(id);
 
-/* ===== Settings ===== */
-const RESEND_SECONDS = 30;
+    /* ===== Settings ===== */
+    const RESEND_SECONDS = 30;
 
-// "reason" values from Auth.verify() that mean the account does not exist.
-// Adjust to match what backend/app.py returns from /verify.
-const NOT_FOUND_REASONS = ["not_found", "none", "no_account", "no_user"];
+    // "reason" values from Auth.verify() that mean the account does not exist.
+    // Adjust to match what backend/app.py returns from /verify.
+    const NOT_FOUND_REASONS = ["not_found", "none", "no_account", "no_user"];
 
-/* ===== Text that has no entry in languages.js yet ===== */
-const LOCAL = {
-  "err.network": {
-    en: "Can't reach the server. Check your connection and try again.",
-    fil: "Hindi makakonekta sa server. Suriin ang iyong koneksyon at subukan muli."
-  },
-  "err.fail": {
-    en: "Unable to sign you in. Please try again.",
-    fil: "Hindi ka maipasok sa account. Subukan muli."
-  }
-};
+    /* ===== Text that has no entry in languages.js yet ===== */
+    const LOCAL = {
+      "err.server": {
+        en: "Open the app through its backend server: run `python backend/app.py`, then visit http://127.0.0.1:5000/login.html.",
+        fil: "Buksan ang app sa backend server: patakbuhin ang `python backend/app.py`, saka pumunta sa http://127.0.0.1:5000/login.html."
+      },
+      "err.network": {
+        en: "Can't reach the server. Check your connection and try again.",
+        fil: "Hindi makakonekta sa server. Suriin ang iyong koneksyon at subukan muli."
+      },
+      "err.tooMany": {
+        en: "Too many attempts. Please wait a moment and try again.",
+        fil: "Masyadong maraming pagsubok. Maghintay muna at subukan muli."
+      }
+    };
 
-function t(key, vars) {
-  if (LOCAL[key]) return LOCAL[key][I18N.getLang()] || LOCAL[key].en;
-  return I18N.t(key, vars);
-}
-
-let toastTimer = null;
-let resendTimer = null;
-let resendLeft = 0;
-let sentEmail = "";
-
-/* ===== Toast ===== */
-function toast(msg) {
-  const el = byId("toast");
-  el.textContent = msg;
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
-}
-
-/* ===== Modals ===== */
-function showModal(id) {
-  ["forgotModal", "checkModal"].forEach((m) => {
-    byId(m).classList.toggle("show", m === id);
-  });
-}
-
-const hideModals = () => showModal(null);
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") hideModals();
-});
-
-/* ===== Show / hide password ===== */
-function paintEye() {
-  const visible = byId("pw").type === "text";
-  byId("pupil").setAttribute("fill", visible ? "none" : "#444");
-  byId("eye").setAttribute("aria-label", t(visible ? "log.eye.hide" : "log.eye.show"));
-}
-
-byId("eye").addEventListener("click", () => {
-  byId("pw").type = byId("pw").type === "text" ? "password" : "text";
-  paintEye();
-});
-
-/* ===== Error helpers (errors are stored as translation keys) ===== */
-const errs = {}; // msgId -> translation key
-
-function setError(inputId, msgId, key) {
-  errs[msgId] = key || null;
-  byId(msgId).textContent = key ? t(key) : "";
-  byId(inputId).classList.toggle("err", !!key);
-}
-
-function repaintErrors() {
-  Object.keys(errs).forEach((msgId) => {
-    if (errs[msgId]) byId(msgId).textContent = t(errs[msgId]);
-  });
-}
-
-function clearErrors() {
-  setError("email", "emailMsg", "");
-  setError("pw", "pwMsg", "");
-}
-
-// Typing in a field clears only that field's error
-byId("email").addEventListener("input", () => setError("email", "emailMsg", ""));
-byId("pw").addEventListener("input", () => setError("pw", "pwMsg", ""));
-byId("fEmail").addEventListener("input", () => setError("fEmail", "fMsg", ""));
-
-/* ===== Login ===== */
-byId("loginForm").addEventListener("submit", (e) => {
-  e.preventDefault();
-  clearErrors();
-
-  const raw = byId("email").value.trim();
-  const pw = byId("pw").value;
-
-  const emailErr = Auth.validId(raw) ? "" : "log.err.id";
-  const pwErr = pw ? "" : "log.err.pw";
-
-  setError("email", "emailMsg", emailErr);
-  setError("pw", "pwMsg", pwErr);
-
-  if (emailErr || pwErr) {
-    byId(emailErr ? "email" : "pw").focus();
-    return;
-  }
-
-  const id = Auth.normalize(raw);
-
-  // Step 1: check the password
-  const check = Auth.verify(id, pw);
-
-  if (!check.ok) {
-    if (check.reason === "network") {
-      setError("pw", "pwMsg", "err.network");
-      byId("pw").focus();
-    } else if (NOT_FOUND_REASONS.includes(check.reason)) {
-      setError("email", "emailMsg", "log.err.none");
-      byId("email").focus();
-    } else {
-      setError("pw", "pwMsg", "log.err.bad");
-      byId("pw").focus();
+    function t(key, vars) {
+      if (LOCAL[key]) return LOCAL[key][I18N.getLang()] || LOCAL[key].en;
+      return I18N.t(key, vars);
     }
-    return;
-  }
 
-  // Step 2: start the session
-  if (!Auth.login(check.id || id)) {
-    setError("pw", "pwMsg", "err.fail");
-    return;
-  }
+    let toastTimer = null;
+    let resendTimer = null;
+    let resendLeft = 0;
+    let sentEmail = "";
 
-  location.href = Auth.HOME;
-});
+    /* ===== Toast ===== */
+    function toast(msg) {
+      const el = byId("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+    }
 
-/* ===== Forgot password ===== */
-byId("forgotLink").addEventListener("click", (e) => {
-  e.preventDefault();
+    /* ===== Modals ===== */
+    function showModal(id) {
+      ["forgotModal", "checkModal"].forEach((m) => {
+        byId(m).classList.toggle("show", m === id);
+      });
+    }
 
-  // Pre-fill with what the user already typed, if it is an email
-  const typed = Auth.normalize(byId("email").value);
-  byId("fEmail").value = Auth.isEmail(typed) ? typed : "";
+    const hideModals = () => showModal(null);
 
-  setError("fEmail", "fMsg", "");
-  showModal("forgotModal");
-  byId("fEmail").focus();
-});
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") hideModals();
+    });
 
-byId("backLogin").addEventListener("click", hideModals);
+    /* ===== Show / hide password ===== */
+    function paintEye() {
+      const visible = byId("pw").type === "text";
+      byId("pupil").setAttribute("fill", visible ? "none" : "#444");
+      byId("eye").setAttribute("aria-label", t(visible ? "log.eye.hide" : "log.eye.show"));
+    }
 
-function paintResend() {
-  byId("resendTxt").textContent = resendLeft > 0
-    ? t("log.c.wait", { n: resendLeft })
-    : t("log.c.resend");
-}
+    byId("eye").addEventListener("click", () => {
+      byId("pw").type = byId("pw").type === "text" ? "password" : "text";
+      paintEye();
+    });
 
-function paintCheckDesc() {
-  if (sentEmail) byId("checkDesc").textContent = t("log.c.desc", { email: sentEmail });
-}
+    /* ===== Error helpers (errors are stored as translation keys) ===== */
+    const errs = {}; // msgId -> translation key
 
-function startCooldown() {
-  resendLeft = RESEND_SECONDS;
-  byId("resend").disabled = true;
-  paintResend();
+    function setError(inputId, msgId, key) {
+      errs[msgId] = key || null;
+      byId(msgId).textContent = key ? t(key) : "";
+      byId(inputId).classList.toggle("err", !!key);
+    }
 
-  clearInterval(resendTimer);
-  resendTimer = setInterval(() => {
-    resendLeft -= 1;
-    if (resendLeft <= 0) {
-      resendLeft = 0;
+    function repaintErrors() {
+      Object.keys(errs).forEach((msgId) => {
+        if (errs[msgId]) byId(msgId).textContent = t(errs[msgId]);
+      });
+    }
+
+    function clearErrors() {
+      setError("email", "emailMsg", "");
+      setError("pw", "pwMsg", "");
+    }
+
+    // Typing in a field clears only that field's error
+    byId("email").addEventListener("input", () => setError("email", "emailMsg", ""));
+    byId("pw").addEventListener("input", () => setError("pw", "pwMsg", ""));
+    byId("fEmail").addEventListener("input", () => setError("fEmail", "fMsg", ""));
+
+    /* ===== Login ===== */
+    byId("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      const raw = byId("email").value.trim();
+      const pw = byId("pw").value;
+
+      const emailErr = Auth.validId(raw) ? "" : "log.err.id";
+      const pwErr = pw ? "" : "log.err.pw";
+
+      setError("email", "emailMsg", emailErr);
+      setError("pw", "pwMsg", pwErr);
+
+      if (emailErr || pwErr) {
+        byId(emailErr ? "email" : "pw").focus();
+        return;
+      }
+
+      const id = Auth.normalize(raw);
+
+      if (location.protocol === "file:") {
+        setError("pw", "pwMsg", "err.server");
+        byId("pw").focus();
+        return;
+      }
+
+      // Step 1: check the password
+      const check = Auth.verify(id, pw);
+
+      if (!check.ok) {
+        if (check.reason === "server_required") {
+          setError("pw", "pwMsg", "err.server");
+          byId("pw").focus();
+        } else if (check.reason === "network") {
+          setError("pw", "pwMsg", "err.network");
+          byId("pw").focus();
+        } else if (NOT_FOUND_REASONS.includes(check.reason)) {
+          setError("email", "emailMsg", "log.err.none");
+          byId("email").focus();
+        } else if (check.reason === "too_many") {
+          setError("pw", "pwMsg", "err.tooMany");
+          byId("pw").focus();
+        } else if (check.reason === "bad") {
+          setError("pw", "pwMsg", "log.err.bad");
+          byId("pw").focus();
+        } else {
+          setError("pw", "pwMsg", "err.fail");
+          byId("pw").focus();
+        }
+        return;
+      }
+
+      // Step 2: start the session
+      const login = Auth.login(check.id || id);
+
+      if (!login.ok) {
+        if (NOT_FOUND_REASONS.includes(login.reason)) {
+          setError("email", "emailMsg", "log.err.none");
+          byId("email").focus();
+        } else if (login.reason === "server_required") {
+          setError("pw", "pwMsg", "err.server");
+          byId("pw").focus();
+        } else if (login.reason === "network") {
+          setError("pw", "pwMsg", "err.network");
+          byId("pw").focus();
+        } else {
+          setError("pw", "pwMsg", "err.fail");
+          byId("pw").focus();
+        }
+        return;
+      }
+
+      location.href = Auth.HOME;
+    });
+
+    /* ===== Forgot password ===== */
+    byId("forgotLink").addEventListener("click", (e) => {
+      e.preventDefault();
+
+      // Pre-fill with what the user already typed, if it is an email
+      const typed = Auth.normalize(byId("email").value);
+      byId("fEmail").value = Auth.isEmail(typed) ? typed : "";
+
+      setError("fEmail", "fMsg", "");
+      showModal("forgotModal");
+      byId("fEmail").focus({ preventScroll: true });
+    });
+
+    byId("backLogin").addEventListener("click", hideModals);
+
+    function paintResend() {
+      byId("resendTxt").textContent = resendLeft > 0
+        ? t("log.c.wait", { n: resendLeft })
+        : t("log.c.resend");
+    }
+
+    function paintCheckDesc() {
+      if (sentEmail) byId("checkDesc").textContent = t("log.c.desc", { email: sentEmail });
+    }
+
+    function startCooldown() {
+      resendLeft = RESEND_SECONDS;
+      byId("resend").disabled = true;
+      paintResend();
+
       clearInterval(resendTimer);
-      byId("resend").disabled = false;
+      resendTimer = setInterval(() => {
+        resendLeft -= 1;
+        if (resendLeft <= 0) {
+          resendLeft = 0;
+          clearInterval(resendTimer);
+          byId("resend").disabled = false;
+        }
+        paintResend();
+      }, 1000);
     }
-    paintResend();
-  }, 1000);
-}
 
-byId("forgotForm").addEventListener("submit", (e) => {
-  e.preventDefault();
+    byId("forgotForm").addEventListener("submit", (e) => {
+      e.preventDefault();
 
-  const email = Auth.normalize(byId("fEmail").value);
+      const email = Auth.normalize(byId("fEmail").value);
 
-  if (!Auth.isEmail(email)) {
-    setError("fEmail", "fMsg", "log.f.err");
-    byId("fEmail").focus();
-    return;
-  }
+      if (!Auth.isEmail(email)) {
+        setError("fEmail", "fMsg", "log.f.err");
+        byId("fEmail").focus();
+        return;
+      }
 
-  // TODO: call your backend here to actually send the reset link
-  sentEmail = email;
-  paintCheckDesc();
-  showModal("checkModal");
-  startCooldown();
-});
+      // TODO: call your backend here to actually send the reset link
+      sentEmail = email;
+      paintCheckDesc();
+      showModal("checkModal");
+      startCooldown();
+    });
 
-byId("resend").addEventListener("click", () => {
-  if (byId("resend").disabled) return;
-  // TODO: call your backend here to resend the reset link
-  toast(t("log.t.resend"));
-});
+    byId("resend").addEventListener("click", () => {
+      if (byId("resend").disabled) return;
+      // TODO: call your backend here to resend the reset link
+      toast(t("log.t.resend"));
+    });
 
-byId("openInbox").addEventListener("click", () => {
-  location.href = "mailto:" + sentEmail;
-});
+    byId("openInbox").addEventListener("click", () => {
+      location.href = "mailto:" + sentEmail;
+    });
 
-/* ===== Re-render dynamic text when the language changes ===== */
-window.addEventListener("langchange", () => {
-  repaintErrors();
-  paintEye();
-  paintResend();
-  paintCheckDesc();
-});
+    /* ===== Re-render dynamic text when the language changes ===== */
+    window.addEventListener("langchange", () => {
+      repaintErrors();
+      paintEye();
+      paintResend();
+      paintCheckDesc();
+    });
 
-paintEye();
+    paintEye();
 
-/* ===== Message after signing up ===== */
-if (new URLSearchParams(location.search).get("created") === "1") {
-  toast(t("log.t.created"));
-}
+    /* ===== Message after signing up ===== */
+    if (new URLSearchParams(location.search).get("created") === "1") {
+      toast(t("log.t.created"));
+    }
   </script>
 </body>
+
 </html>

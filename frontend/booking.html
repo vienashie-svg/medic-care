@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-requires-login>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -7,504 +8,678 @@
   <script src="auth.js"></script>
 
   <style>
-/* ===== Fluid base: lahat ng sukat ay rem, kaya sabay-sabay lumalaki/lumiliit ayon sa screen ===== */
-:root {
-  --blue: #2b56cb;
-  --blue-soft: #f0f5ff;
-  --ink: #1e293b;
-  --ink-2: #334155;
-  --muted: #64748b;
-  --line: #cbd5e1;
-  --red: #ef4444;
-}
+    /* ===== Fluid base: lahat ng sukat ay rem, kaya sabay-sabay lumalaki/lumiliit ayon sa screen ===== */
+    :root {
+      --blue: #2b56cb;
+      --blue-soft: #f0f5ff;
+      --ink: #1e293b;
+      --ink-2: #334155;
+      --muted: #64748b;
+      --line: #cbd5e1;
+      --red: #ef4444;
+    }
 
-html {
-  font-size: clamp(15px, 0.35vw + 14px, 18px);   /* 15px sa maliit na phone -> 18px sa malaking screen */
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
+    html {
+      font-size: clamp(15px, 0.35vw + 14px, 18px);
+      /* 15px sa maliit na phone -> 18px sa malaking screen */
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-body {
-  min-height: 100vh;
-  min-height: 100dvh;
-  background: linear-gradient(180deg, #2b56cb 0%, #3b6bdc 30%, #a2b7e8 70%, #d8e2f8 100%) fixed;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: max(.75rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right))
-           max(.75rem, env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left));
-}
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: linear-gradient(180deg, #2b56cb 0%, #3b6bdc 30%, #a2b7e8 70%, #d8e2f8 100%) fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: max(.75rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) max(.75rem, env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left));
+    }
 
-/* Medyo portrait na card: makitid pero mahaba, nag-aadjust ayon sa screen */
-.booking-card {
-  background: #ffffff;
-  width: 100%;
-  max-width: 36rem;
-  border-radius: 1.25rem;
-  box-shadow: 0 .6rem 2rem rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-  margin: auto;
-}
+    /* Medyo portrait na card: makitid pero mahaba, nag-aadjust ayon sa screen */
+    .booking-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 36rem;
+      border-radius: 1.25rem;
+      box-shadow: 0 .6rem 2rem rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+      margin: auto;
+    }
 
-/* ===== Header ===== */
-.card-header {
-  background-color: #536493;
-  color: white;
-  padding: 1rem 1.25rem 1.25rem;
-  text-align: center;
-}
+    /* ===== Header ===== */
+    .card-header {
+      background-color: #536493;
+      color: white;
+      padding: 1rem 1.25rem 1.25rem;
+      text-align: center;
+    }
 
-.back-home {
-  display: block;
-  text-align: left;
-  color: #fff;
-  font-size: .9rem;
-  text-decoration: none;
-  opacity: .9;
-  margin-bottom: .5rem;
-}
-.back-home:hover { text-decoration: underline; opacity: 1; }
+    .back-home {
+      display: block;
+      text-align: left;
+      color: #fff;
+      font-size: .9rem;
+      text-decoration: none;
+      opacity: .9;
+      margin-bottom: .5rem;
+    }
 
-.card-header h2 {
-  font-size: clamp(1.1rem, 4.2vw, 1.45rem);
-  font-weight: 700;
-  line-height: 1.25;
-  margin-bottom: .25rem;
-  overflow-wrap: anywhere;
-}
+    .back-home:hover {
+      text-decoration: underline;
+      opacity: 1;
+    }
 
-.card-header p {
-  font-size: .9rem;
-  line-height: 1.35;
-  opacity: 0.9;
-  margin-bottom: 1rem;
-}
+    .card-header h2 {
+      font-size: clamp(1.1rem, 4.2vw, 1.45rem);
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: .25rem;
+      overflow-wrap: anywhere;
+    }
 
-/* ===== Stepper ===== */
-.stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 22rem;
-  margin: 0 auto;
-  position: relative;
-}
+    .card-header p {
+      font-size: .9rem;
+      line-height: 1.35;
+      opacity: 0.9;
+      margin-bottom: 1rem;
+    }
 
-.stepper-line {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.4);
-  transform: translateY(-50%);
-  z-index: 1;
-}
+    /* ===== Stepper ===== */
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 22rem;
+      margin: 0 auto;
+      position: relative;
+    }
 
-.stepper-progress {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  height: 3px;
-  background: #ffffff;
-  transform: translateY(-50%);
-  z-index: 1;
-  transition: width 0.3s ease;
-}
+    .stepper-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.4);
+      transform: translateY(-50%);
+      z-index: 1;
+    }
 
-.step-dot {
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  border: 2px solid #536493;
-  z-index: 2;
-  position: relative;
-  transition: all 0.3s ease;
-}
+    .stepper-progress {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      height: 3px;
+      background: #ffffff;
+      transform: translateY(-50%);
+      z-index: 1;
+      transition: width 0.3s ease;
+    }
 
-.step-dot.completed {
-  background: #ffffff;
-  border-color: #ffffff;
-  color: var(--blue);
-  font-size: .75rem;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    .step-dot {
+      width: 1.1rem;
+      height: 1.1rem;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      border: 2px solid #536493;
+      z-index: 2;
+      position: relative;
+      transition: all 0.3s ease;
+    }
 
-.step-dot.active {
-  background: var(--blue);
-  border: 2px solid #ffffff;
-  transform: scale(1.2);
-}
+    .step-dot.completed {
+      background: #ffffff;
+      border-color: #ffffff;
+      color: var(--blue);
+      font-size: .75rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-/* ===== Body & steps ===== */
-.card-body {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-}
+    .step-dot.active {
+      background: var(--blue);
+      border: 2px solid #ffffff;
+      transform: scale(1.2);
+    }
 
-.step-section { display: none; flex: 1; }
-.step-section.active { display: flex; flex-direction: column; }
+    /* ===== Body & steps ===== */
+    .card-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+    }
 
-.section-label {
-  font-size: .8rem;
-  font-weight: 700;
-  color: #718096;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: .6rem;
-}
-.red-label { color: var(--red) !important; }
+    .step-section {
+      display: none;
+      flex: 1;
+    }
 
-/* ===== Step 1: services (Title Case) ===== */
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);          /* portrait: 2 columns */
-  gap: .75rem;
-  margin-bottom: 1.25rem;
-}
+    .step-section.active {
+      display: flex;
+      flex-direction: column;
+    }
 
-.service-card {
-  border: 1px solid #e2e8f0;
-  border-radius: .75rem;
-  padding: .75rem .6rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 6.5rem;
-  background: #ffffff;
-}
+    .section-label {
+      font-size: .8rem;
+      font-weight: 700;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: .6rem;
+    }
 
-.service-card.selected {
-  border: 2px solid var(--blue) !important;
-  background: var(--blue-soft) !important;
-}
+    .red-label {
+      color: var(--red) !important;
+    }
 
-.service-badge {
-  background: #b2c5f5;
-  color: #1e3a8a;
-  font-size: .8rem;
-  font-weight: 700;
-  border-radius: .3rem;
-  padding: .15rem .45rem;
-  margin-bottom: .4rem;
-}
+    /* ===== Step 1: services (Title Case) ===== */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      /* portrait: 2 columns */
+      gap: .75rem;
+      margin-bottom: 1.25rem;
+    }
 
-.service-title {
-  font-size: .9rem;
-  font-weight: 700;
-  color: var(--ink-2);
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
+    .service-card {
+      border: 1px solid #e2e8f0;
+      border-radius: .75rem;
+      padding: .75rem .6rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 6.5rem;
+      background: #ffffff;
+    }
 
-/* ===== Step 2: specific service (Title Case) ===== */
-.options-list { display: flex; flex-direction: column; gap: .75rem; }
+    .service-card.selected {
+      border: 2px solid var(--blue) !important;
+      background: var(--blue-soft) !important;
+    }
 
-.option-box {
-  border: 1px solid var(--line);
-  border-radius: .85rem;
-  padding: .9rem 1rem;
-  min-height: 3.25rem;
-  background: #f8fafc;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: .75rem;
-  cursor: pointer;
-}
+    .service-badge {
+      background: #b2c5f5;
+      color: #1e3a8a;
+      font-size: .8rem;
+      font-weight: 700;
+      border-radius: .3rem;
+      padding: .15rem .45rem;
+      margin-bottom: .4rem;
+    }
 
-.option-box.selected {
-  border: 2px solid var(--blue) !important;
-  background: var(--blue-soft) !important;
-}
+    .service-title {
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--ink-2);
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
 
-.option-text {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.35;
-  flex: 1;
-  overflow-wrap: anywhere;
-}
+    /* ===== Step 2: specific service (Title Case) ===== */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
 
-.radio-circle {
-  width: 1.3rem;
-  height: 1.3rem;
-  border-radius: 50%;
-  border: 2px solid var(--blue);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
+    .option-box {
+      border: 1px solid var(--line);
+      border-radius: .85rem;
+      padding: .9rem 1rem;
+      min-height: 3.25rem;
+      background: #f8fafc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .75rem;
+      cursor: pointer;
+    }
 
-.option-box.selected .radio-circle::after {
-  content: "";
-  width: .6rem;
-  height: .6rem;
-  border-radius: 50%;
-  background: var(--blue);
-}
+    .option-box.selected {
+      border: 2px solid var(--blue) !important;
+      background: var(--blue-soft) !important;
+    }
 
-/* ===== Step 3: calendar, time, doctor (naka-stack, portrait) ===== */
-.calendar-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
+    .option-text {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.35;
+      flex: 1;
+      overflow-wrap: anywhere;
+    }
 
-.calendar-box {
-  border: 1px solid #e2e8f0;
-  border-radius: .75rem;
-  padding: .75rem;
-  background: #ffffff;
-}
+    .radio-circle {
+      width: 1.3rem;
+      height: 1.3rem;
+      border-radius: 50%;
+      border: 2px solid var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
 
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--ink-2);
-  margin-bottom: .6rem;
-}
+    .option-box.selected .radio-circle::after {
+      content: "";
+      width: .6rem;
+      height: .6rem;
+      border-radius: 50%;
+      background: var(--blue);
+    }
 
-.cal-nav {
-  cursor: pointer;
-  color: var(--muted);
-  font-weight: bold;
-  font-size: 1.25rem;
-  min-width: 2.5rem;
-  min-height: 2.5rem;
-  display: grid;
-  place-items: center;
-  border-radius: .5rem;
-  user-select: none;
-}
-.cal-nav:hover { color: var(--blue); background: #f1f5f9; }
+    /* ===== Step 3: calendar, time, doctor (naka-stack, portrait) ===== */
+    .calendar-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
 
-.calendar-days-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  font-size: .7rem;
-  font-weight: 700;
-  color: #94a3b8;
-  margin-bottom: .3rem;
-}
+    .calendar-box {
+      border: 1px solid #e2e8f0;
+      border-radius: .75rem;
+      padding: .75rem;
+      background: #ffffff;
+    }
 
-.calendar-days-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: .2rem;
-  text-align: center;
-}
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink-2);
+      margin-bottom: .6rem;
+    }
 
-.day-cell {
-  font-size: .95rem;
-  color: var(--ink-2);
-  border-radius: 50%;
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 1;
-}
+    .cal-nav {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: bold;
+      font-size: 1.25rem;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      display: grid;
+      place-items: center;
+      border-radius: .5rem;
+      user-select: none;
+    }
 
-.day-cell.selected {
-  background-color: var(--blue) !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-}
+    .cal-nav:hover {
+      color: var(--blue);
+      background: #f1f5f9;
+    }
 
-.day-cell.empty { cursor: default; }
-.day-cell.past { opacity: .35; cursor: not-allowed; pointer-events: none; }
+    .calendar-days-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: .7rem;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: .3rem;
+    }
 
-.time-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
-  gap: .5rem;
-}
+    .calendar-days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: .2rem;
+      text-align: center;
+    }
 
-.time-btn {
-  border: 1px solid var(--line);
-  border-radius: .5rem;
-  padding: .6rem 0;
-  min-height: 2.6rem;
-  background: #ffffff;
-  font-size: .95rem;
-  font-weight: 600;
-  color: var(--ink-2);
-  cursor: pointer;
-  text-align: center;
-  outline: none;
-  transition: all 0.15s;
-}
+    .day-cell {
+      font-size: .95rem;
+      color: var(--ink-2);
+      border-radius: 50%;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 1;
+    }
 
-.time-btn.selected {
-  border: 2px solid var(--blue) !important;
-  background: #eef2ff !important;
-  color: var(--blue) !important;
-  font-weight: 700 !important;
-}
+    .day-cell.selected {
+      background-color: var(--blue) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
 
-/* A time that is already booked on the chosen date */
-.time-btn.taken, .time-btn:disabled {
-  background: #f1f5f9 !important; color: #94a3b8 !important; border: 1px solid #e2e8f0 !important;
-  text-decoration: line-through; cursor: not-allowed; font-weight: 500 !important;
-}
+    .day-cell.empty {
+      cursor: default;
+    }
 
-/* ===== Step 4: patient form ===== */
-input[type="date"].form-control {
-  position: relative;
-  background-color: #ffffff;
-  color: var(--ink-2);
-  min-height: 2.75rem;
-}
+    .day-cell.past {
+      opacity: .35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  filter: invert(0.3);
-  padding: 2px;
-}
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+      gap: .5rem;
+    }
 
-/* Kusang nagiging 1 o 2 columns depende sa lapad */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
-  gap: .75rem 1rem;
-}
+    .time-btn {
+      border: 1px solid var(--line);
+      border-radius: .5rem;
+      padding: .6rem 0;
+      min-height: 2.6rem;
+      background: #ffffff;
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      cursor: pointer;
+      text-align: center;
+      outline: none;
+      transition: all 0.15s;
+    }
 
-.form-group { display: flex; flex-direction: column; min-width: 0; }
+    .time-btn.selected {
+      border: 2px solid var(--blue) !important;
+      background: #eef2ff !important;
+      color: var(--blue) !important;
+      font-weight: 700 !important;
+    }
 
-.form-group label {
-  font-size: .9rem;
-  font-weight: 600;
-  color: var(--ink-2);
-  margin-bottom: .25rem;
-}
+    /* A time that is already booked on the chosen date */
+    .time-btn.taken,
+    .time-btn:disabled {
+      background: #f1f5f9 !important;
+      color: #94a3b8 !important;
+      border: 1px solid #e2e8f0 !important;
+      text-decoration: line-through;
+      cursor: not-allowed;
+      font-weight: 500 !important;
+    }
 
-.opt-text { font-weight: 400; color: #94a3b8; font-size: .8rem; }
+    /* ===== Step 4: patient form ===== */
+    input[type="date"].form-control {
+      position: relative;
+      background-color: #ffffff;
+      color: var(--ink-2);
+      min-height: 2.75rem;
+    }
 
-.form-control {
-  border: 1px solid var(--line);
-  border-radius: .5rem;
-  padding: .65rem .75rem;
-  min-height: 2.75rem;
-  font-size: max(16px, 1rem);          /* 16px+ para hindi mag-auto-zoom ang iPhone */
-  outline: none;
-  color: var(--ink-2);
-  width: 100%;
-  background: #ffffff;
-}
-.form-control::placeholder { color: #94a3b8; }
-.form-control:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(43, 86, 203, .15); }
-select.form-control { cursor: pointer; }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      filter: invert(0.3);
+      padding: 2px;
+    }
 
-.form-control.error {
-  border-color: var(--red) !important;
-  background-color: #fef2f2 !important;
-}
+    /* Kusang nagiging 1 o 2 columns depende sa lapad */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+      gap: .75rem 1rem;
+    }
 
-.error-msg { font-size: .8rem; color: var(--red); margin-top: .25rem; display: none; line-height: 1.3; }
-.error-msg.show { display: block; }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
 
-/* ===== Step 5: review ===== */
-.review-details-container { display: flex; flex-direction: column; gap: .75rem; padding: .15rem 0; }
-.review-block { display: flex; flex-direction: column; gap: .35rem; }
-.review-title { font-size: .95rem; font-weight: 800; color: var(--ink); margin-bottom: .15rem; }
-.review-row { display: flex; gap: .5rem; font-size: .9rem; line-height: 1.35; }
-.review-key { color: var(--muted); font-weight: 600; width: 9.5rem; flex-shrink: 0; }
-.review-val { color: var(--ink); font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
-.review-divider { border-bottom: 1px solid #e2e8f0; margin: .15rem 0; }
+    .form-group label {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      margin-bottom: .25rem;
+    }
 
-/* ===== Success ===== */
-.success-container {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; padding: 1.5rem .75rem; flex: 1;
-}
-.success-icon-box {
-  width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #dcfce7; color: #16a34a;
-  font-size: 1.75rem; font-weight: bold; display: flex; align-items: center; justify-content: center; margin-bottom: .9rem;
-}
-.success-title { font-size: 1.3rem; font-weight: 700; color: var(--ink); margin-bottom: .4rem; }
-.success-desc { font-size: .95rem; color: var(--muted); margin-bottom: 1.25rem; max-width: 22rem; line-height: 1.45; }
+    .opt-text {
+      font-weight: 400;
+      color: #94a3b8;
+      font-size: .8rem;
+    }
 
-/* ===== Buttons ===== */
-.action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: .6rem;
-  margin-top: auto;
-  padding-top: 1.25rem;
-}
+    .form-control {
+      border: 1px solid var(--line);
+      border-radius: .5rem;
+      padding: .65rem .75rem;
+      min-height: 2.75rem;
+      font-size: max(16px, 1rem);
+      /* 16px+ para hindi mag-auto-zoom ang iPhone */
+      outline: none;
+      color: var(--ink-2);
+      width: 100%;
+      background: #ffffff;
+    }
 
-.btn {
-  padding: .7rem 1.6rem;
-  min-height: 2.75rem;
-  border-radius: 999px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.15s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-secondary { background: #f1f5f9; color: var(--muted); }
-.btn-secondary:hover { background: #e2e8f0; }
-.btn-primary { background: #3b82f6; color: #ffffff; }
-.btn-primary:hover { background: #2563eb; }
-.btn-submit { background: #3b82f6 !important; }
+    .form-control::placeholder {
+      color: #94a3b8;
+    }
 
-/* ===== Responsive ===== */
-/* Maliit na phone: buttons na kasya ang buong lapad, review rows naka-stack */
-@media (max-width: 420px) {
-  .card-body { padding: 1rem; }
-  .action-buttons .btn { flex: 1; }
-  .review-row { flex-direction: column; gap: .05rem; }
-  .review-key { width: auto; }
-  .services-grid { gap: .6rem; }
-}
+    .form-control:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(43, 86, 203, .15);
+    }
 
-/* Malalaking screen (tablet, laptop): mas maluwag at mas malaki ang card, portrait pa rin */
-@media (min-width: 768px) {
-  .booking-card { max-width: 40rem; }
-  .card-body { padding: 1.5rem 1.75rem; }
-  .card-header { padding: 1.25rem 1.75rem 1.5rem; }
-}
+    select.form-control {
+      cursor: pointer;
+    }
 
-/* Mababang taas (phone na naka-landscape): huwag nang naka-center para hindi maputol ang taas */
-@media (max-height: 520px) {
-  body { align-items: flex-start; }
-}
+    .form-control.error {
+      border-color: var(--red) !important;
+      background-color: #fef2f2 !important;
+    }
 
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
-}
+    .error-msg {
+      font-size: .8rem;
+      color: var(--red);
+      margin-top: .25rem;
+      display: none;
+      line-height: 1.3;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+
+    /* ===== Step 5: review ===== */
+    .review-details-container {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      padding: .15rem 0;
+    }
+
+    .review-block {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+    }
+
+    .review-title {
+      font-size: .95rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: .15rem;
+    }
+
+    .review-row {
+      display: flex;
+      gap: .5rem;
+      font-size: .9rem;
+      line-height: 1.35;
+    }
+
+    .review-key {
+      color: var(--muted);
+      font-weight: 600;
+      width: 9.5rem;
+      flex-shrink: 0;
+    }
+
+    .review-val {
+      color: var(--ink);
+      font-weight: 700;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .review-divider {
+      border-bottom: 1px solid #e2e8f0;
+      margin: .15rem 0;
+    }
+
+    /* ===== Success ===== */
+    .success-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1.5rem .75rem;
+      flex: 1;
+    }
+
+    .success-icon-box {
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      background: #dcfce7;
+      color: #16a34a;
+      font-size: 1.75rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: .9rem;
+    }
+
+    .success-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .4rem;
+    }
+
+    .success-desc {
+      font-size: .95rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      max-width: 22rem;
+      line-height: 1.45;
+    }
+
+    /* ===== Buttons ===== */
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: .6rem;
+      margin-top: auto;
+      padding-top: 1.25rem;
+    }
+
+    .btn {
+      padding: .7rem 1.6rem;
+      min-height: 2.75rem;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: var(--muted);
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-submit {
+      background: #3b82f6 !important;
+    }
+
+    /* ===== Responsive ===== */
+    /* Maliit na phone: buttons na kasya ang buong lapad, review rows naka-stack */
+    @media (max-width: 420px) {
+      .card-body {
+        padding: 1rem;
+      }
+
+      .action-buttons .btn {
+        flex: 1;
+      }
+
+      .review-row {
+        flex-direction: column;
+        gap: .05rem;
+      }
+
+      .review-key {
+        width: auto;
+      }
+
+      .services-grid {
+        gap: .6rem;
+      }
+    }
+
+    /* Malalaking screen (tablet, laptop): mas maluwag at mas malaki ang card, portrait pa rin */
+    @media (min-width: 768px) {
+      .booking-card {
+        max-width: 40rem;
+      }
+
+      .card-body {
+        padding: 1.5rem 1.75rem;
+      }
+
+      .card-header {
+        padding: 1.25rem 1.75rem 1.5rem;
+      }
+    }
+
+    /* Mababang taas (phone na naka-landscape): huwag nang naka-center para hindi maputol ang taas */
+    @media (max-height: 520px) {
+      body {
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <div class="booking-card">
@@ -530,15 +705,18 @@ select.form-control { cursor: pointer; }
       <div class="step-section active" id="step-1">
         <div class="section-label">CHOOSE A SERVICE</div>
         <div class="services-grid">
-          <div class="service-card" onclick="selectServiceCategory('OB', 'Obstetrics and Gynecology (OB, GYNE, Family Planning)', this)">
+          <div class="service-card"
+            onclick="selectServiceCategory('OB', 'Obstetrics and Gynecology (OB, GYNE, Family Planning)', this)">
             <span class="service-badge">OB</span>
             <span class="service-title">Obstetrics and Gynecology (OB, GYNE, Family Planning)</span>
           </div>
-          <div class="service-card selected" onclick="selectServiceCategory('IM', 'Internal Medicine Services (IM, Diabetes Mellitus, CP Clearance)', this)">
+          <div class="service-card selected"
+            onclick="selectServiceCategory('IM', 'Internal Medicine Services (IM, Diabetes Mellitus, CP Clearance)', this)">
             <span class="service-badge">IM</span>
             <span class="service-title">Internal Medicine Services (IM, Diabetes Mellitus, CP Clearance)</span>
           </div>
-          <div class="service-card" onclick="selectServiceCategory('PD', 'Pediatrics Services (Pedia, Newborn, School Clearance)', this)">
+          <div class="service-card"
+            onclick="selectServiceCategory('PD', 'Pediatrics Services (Pedia, Newborn, School Clearance)', this)">
             <span class="service-badge">PD</span>
             <span class="service-title">Pediatrics Services (Pedia, Newborn, School Clearance)</span>
           </div>
@@ -597,7 +775,8 @@ select.form-control { cursor: pointer; }
           </div>
 
           <div>
-            <div class="section-label red-label">SELECT TIME * <span class="opt-text">(8:00 AM &ndash; 4:00 PM)</span></div>
+            <div class="section-label red-label">SELECT TIME * <span class="opt-text">(8:00 AM &ndash; 4:00 PM)</span>
+            </div>
             <div class="time-grid">
               <button class="time-btn" onclick="selectTime('8:00 AM', this)">8:00 AM</button>
               <button class="time-btn" onclick="selectTime('1:00 PM', this)">1:00 PM</button>
@@ -749,7 +928,8 @@ select.form-control { cursor: pointer; }
         <div class="success-container">
           <div class="success-icon-box">✓</div>
           <h3 class="success-title">Appointment Confirmed!</h3>
-          <p class="success-desc">Your appointment has been successfully submitted and saved. We look forward to seeing you.</p>
+          <p class="success-desc">Your appointment has been successfully submitted and saved. We look forward to seeing
+            you.</p>
           <div class="action-buttons" style="justify-content: center; width: 100%; margin-top: 10px;">
             <a class="btn btn-secondary" href="index.html" style="text-decoration:none">Back to Home</a>
             <button class="btn btn-primary" onclick="location.reload()">Book Another Appointment</button>
@@ -761,450 +941,451 @@ select.form-control { cursor: pointer; }
   </div>
 
   <script>
-let currentStep = 1;
+    let currentStep = 1;
 
-/* Title Case ang lahat ng pagpipilian (service at specific service) */
-const subServicesData = {
-  OB: {
-    title: "OBSTETRICS AND GYNECOLOGY SERVICES LINK",
-    subtitle: "(OB, GYNE, FAMILY PLANNING)",
-    options: ["Prenatal Consultation", "Gynecology Checkup", "Family Planning"]
-  },
-  IM: {
-    title: "INTERNAL MEDICINE SERVICES LINK",
-    subtitle: "(IM, DIABETES MELLITUS, CP CLEARANCE)",
-    options: ["Diabetes Mellitus", "CP Clearance", "General IM Consultations"]
-  },
-  PD: {
-    title: "PEDIATRICS SERVICES LINK",
-    subtitle: "(PEDIA, NEWBORN, SCHOOL CLEARANCE)",
-    options: ["Pediatric Consultation", "Newborn Care", "School Clearance"]
-  },
-  GS: {
-    title: "GENERAL SURGERY LINK",
-    subtitle: "(SURGICAL CONSULTATIONS)",
-    options: ["Surgical Consultation", "Minor Surgical Procedure", "Post-Operative Checkup"]
-  },
-  DS: {
-    title: "DENTAL SERVICES LINK",
-    subtitle: "(DENTAL CARE & CONSULTATIONS)",
-    options: ["Dental Checkup & Cleaning", "Tooth Extraction", "Oral Consultation"]
-  },
-  SP: {
-    title: "SUBSPECIALTY SERVICES LINK",
-    subtitle: "(OPHTHAL, CARDIO, DERMA)",
-    options: ["Ophthalmology Consultation", "Cardiology Checkup", "Dermatology Consultation"]
-  },
-  US: {
-    title: "ULTRASOUND SERVICES LINK",
-    subtitle: "(IMAGING & ULTRASOUND)",
-    options: ["Pelvic Ultrasound", "Abdominal Ultrasound", "OB-GYNE Ultrasound"]
-  },
-  OS: {
-    title: "OTHER SERVICES LINK",
-    subtitle: "(MISCELLANEOUS & GENERAL CARE)",
-    options: ["General Health Checkup", "Medical Certificate Issuance", "Laboratory Consultation"]
-  }
-};
+    /* Title Case ang lahat ng pagpipilian (service at specific service) */
+    const subServicesData = {
+      OB: {
+        title: "OBSTETRICS AND GYNECOLOGY SERVICES LINK",
+        subtitle: "(OB, GYNE, FAMILY PLANNING)",
+        options: ["Prenatal Consultation", "Gynecology Checkup", "Family Planning"]
+      },
+      IM: {
+        title: "INTERNAL MEDICINE SERVICES LINK",
+        subtitle: "(IM, DIABETES MELLITUS, CP CLEARANCE)",
+        options: ["Diabetes Mellitus", "CP Clearance", "General IM Consultations"]
+      },
+      PD: {
+        title: "PEDIATRICS SERVICES LINK",
+        subtitle: "(PEDIA, NEWBORN, SCHOOL CLEARANCE)",
+        options: ["Pediatric Consultation", "Newborn Care", "School Clearance"]
+      },
+      GS: {
+        title: "GENERAL SURGERY LINK",
+        subtitle: "(SURGICAL CONSULTATIONS)",
+        options: ["Surgical Consultation", "Minor Surgical Procedure", "Post-Operative Checkup"]
+      },
+      DS: {
+        title: "DENTAL SERVICES LINK",
+        subtitle: "(DENTAL CARE & CONSULTATIONS)",
+        options: ["Dental Checkup & Cleaning", "Tooth Extraction", "Oral Consultation"]
+      },
+      SP: {
+        title: "SUBSPECIALTY SERVICES LINK",
+        subtitle: "(OPHTHAL, CARDIO, DERMA)",
+        options: ["Ophthalmology Consultation", "Cardiology Checkup", "Dermatology Consultation"]
+      },
+      US: {
+        title: "ULTRASOUND SERVICES LINK",
+        subtitle: "(IMAGING & ULTRASOUND)",
+        options: ["Pelvic Ultrasound", "Abdominal Ultrasound", "OB-GYNE Ultrasound"]
+      },
+      OS: {
+        title: "OTHER SERVICES LINK",
+        subtitle: "(MISCELLANEOUS & GENERAL CARE)",
+        options: ["General Health Checkup", "Medical Certificate Issuance", "Laboratory Consultation"]
+      }
+    };
 
-const doctorsData = {
-  OB: ["Dr. Celestia Santos", "Dr. Mich Collins"],
-  IM: ["Dr. Larry Ross"],
-  PD: ["Dr. Rich Reyes", "Dr. Lara Williams"],
-  GS: ["Dr. Daisy Diaz"],
-  DS: ["Dr. Jay Maxwell", "Dr. Mark Smith"],
-  SP: ["Dr. Sarah Lee"],
-  US: ["Dr. Francis Garcia", "Dr. Elaine Sanchez"],
-  OS: ["Dr. Juanito Martinez"]
-};
+    const doctorsData = {
+      OB: ["Dr. Celestia Santos", "Dr. Mich Collins"],
+      IM: ["Dr. Larry Ross"],
+      PD: ["Dr. Rich Reyes", "Dr. Lara Williams"],
+      GS: ["Dr. Daisy Diaz"],
+      DS: ["Dr. Jay Maxwell", "Dr. Mark Smith"],
+      SP: ["Dr. Sarah Lee"],
+      US: ["Dr. Francis Garcia", "Dr. Elaine Sanchez"],
+      OS: ["Dr. Juanito Martinez"]
+    };
 
-let selectedCategoryCode = "IM";
-let selectedCategoryName = "Internal Medicine Services (IM, Diabetes Mellitus, CP Clearance)";
-let selectedSpecific = "General IM Consultations";
+    let selectedCategoryCode = "IM";
+    let selectedCategoryName = "Internal Medicine Services (IM, Diabetes Mellitus, CP Clearance)";
+    let selectedSpecific = "General IM Consultations";
 
-const _now = new Date();
-let currentCalDate = new Date(_now.getFullYear(), _now.getMonth(), 1);
-let selectedDate = String(_now.getDate());
-let selectedTime = "10:00 AM";
-const isoOf = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-const selectedISO = () => isoOf(currentCalDate.getFullYear(), currentCalDate.getMonth(), Number(selectedDate));
-// "10:00 AM" -> "10:00AM - 11:00AM" (same format the My Appointment page uses)
-function slotLabel(t) {
-  const [hm, ap] = t.split(" "); let h = Number(hm.split(":")[0]);
-  const next = h + 1, nextAp = (h === 11 && ap === "AM") ? "PM" : ap;
-  return `${h}:00${ap} - ${next > 12 ? next - 12 : next}:00${nextAp}`;
-}
-let selectedDoctor = "";
-
-// Is this date + time already booked? (any appointment that isn't cancelled)
-function isTaken(iso, time) {
-  const slot = slotLabel(time);
-  return Auth.getAppointments().some((a) => a.status !== "Cancelled" && a.date === iso && a.time === slot);
-}
-// Grey out the times that are already booked on the selected date
-function refreshTimes() {
-  const iso = selectedISO();
-  document.querySelectorAll(".time-btn").forEach((btn) => {
-    const time = btn.textContent.trim();
-    const taken = isTaken(iso, time);
-    btn.disabled = taken;
-    btn.classList.toggle("taken", taken);
-    btn.title = taken ? "Already booked" : "";
-    if (taken && btn.classList.contains("selected")) { btn.classList.remove("selected"); selectedTime = ""; }
-  });
-}
-
-const monthNames = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
-
-const baseHeaders = [
-  { title: "Book an Appointment", subtitle: "Select your preferred service to get started." },
-  { title: "SELECT SPECIFIC APPOINTMENT TYPE", subtitle: "Choose your appointment variation." },
-  { title: "Calendar & Doctor Selection", subtitle: "Choose your preferred schedule and available specialist." },
-  { title: "Patient Information", subtitle: "Please fill out the form below with accurate details." },
-  { title: "Review Details", subtitle: "Please review your appointment details carefully before confirming." }
-];
-
-function updateHeader() {
-  if (currentStep === 2) {
-    const data = subServicesData[selectedCategoryCode] || subServicesData['IM'];
-    document.getElementById("header-title").innerText = data.title;
-    document.getElementById("header-subtitle").innerText = data.subtitle;
-  } else {
-    const h = baseHeaders[currentStep - 1];
-    document.getElementById("header-title").innerText = h.title;
-    document.getElementById("header-subtitle").innerText = h.subtitle;
-  }
-
-  const progressPercent = ((currentStep - 1) / 4) * 100;
-  document.getElementById("stepper-progress").style.width = progressPercent + "%";
-
-  for (let i = 1; i <= 5; i++) {
-    const dot = document.getElementById(`dot-${i}`);
-    dot.innerHTML = "";
-    if (i < currentStep) {
-      dot.className = "step-dot completed";
-      dot.innerHTML = "&#10003;";
-    } else if (i === currentStep) {
-      dot.className = "step-dot active";
-    } else {
-      dot.className = "step-dot";
+    const _now = new Date();
+    let currentCalDate = new Date(_now.getFullYear(), _now.getMonth(), 1);
+    let selectedDate = String(_now.getDate());
+    let selectedTime = "10:00 AM";
+    const isoOf = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const selectedISO = () => isoOf(currentCalDate.getFullYear(), currentCalDate.getMonth(), Number(selectedDate));
+    // "10:00 AM" -> "10:00AM - 11:00AM" (same format the My Appointment page uses)
+    function slotLabel(t) {
+      const [hm, ap] = t.split(" "); let h = Number(hm.split(":")[0]);
+      const next = h + 1, nextAp = (h === 11 && ap === "AM") ? "PM" : ap;
+      return `${h}:00${ap} - ${next > 12 ? next - 12 : next}:00${nextAp}`;
     }
-  }
-}
+    let selectedDoctor = "";
 
-function renderSubServices() {
-  const container = document.getElementById("options-list-container");
-  if (!container) return;
+    // Is this date + time already booked? (any appointment that isn't cancelled)
+    function isTaken(iso, time) {
+      const slot = slotLabel(time);
+      return Auth.getAppointments().some((a) => a.status !== "Cancelled" && a.date === iso && a.time === slot);
+    }
+    // Grey out the times that are already booked on the selected date
+    function refreshTimes() {
+      const iso = selectedISO();
+      document.querySelectorAll(".time-btn").forEach((btn) => {
+        const time = btn.textContent.trim();
+        const taken = isTaken(iso, time);
+        btn.disabled = taken;
+        btn.classList.toggle("taken", taken);
+        btn.title = taken ? "Already booked" : "";
+        if (taken && btn.classList.contains("selected")) { btn.classList.remove("selected"); selectedTime = ""; }
+      });
+    }
 
-  container.innerHTML = "";
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
 
-  const categoryData = subServicesData[selectedCategoryCode] || subServicesData['IM'];
-  const options = categoryData.options;
+    const baseHeaders = [
+      { title: "Book an Appointment", subtitle: "Select your preferred service to get started." },
+      { title: "SELECT SPECIFIC APPOINTMENT TYPE", subtitle: "Choose your appointment variation." },
+      { title: "Calendar & Doctor Selection", subtitle: "Choose your preferred schedule and available specialist." },
+      { title: "Patient Information", subtitle: "Please fill out the form below with accurate details." },
+      { title: "Review Details", subtitle: "Please review your appointment details carefully before confirming." }
+    ];
 
-  selectedSpecific = options[0];
+    function updateHeader() {
+      if (currentStep === 2) {
+        const data = subServicesData[selectedCategoryCode] || subServicesData['IM'];
+        document.getElementById("header-title").innerText = data.title;
+        document.getElementById("header-subtitle").innerText = data.subtitle;
+      } else {
+        const h = baseHeaders[currentStep - 1];
+        document.getElementById("header-title").innerText = h.title;
+        document.getElementById("header-subtitle").innerText = h.subtitle;
+      }
 
-  options.forEach((optText, index) => {
-    const isSelected = index === 0;
-    const optionBox = document.createElement("div");
-    optionBox.className = `option-box ${isSelected ? 'selected' : ''}`;
-    optionBox.onclick = function() { selectSpecificService(optText, this); };
+      const progressPercent = ((currentStep - 1) / 4) * 100;
+      document.getElementById("stepper-progress").style.width = progressPercent + "%";
 
-    optionBox.innerHTML = `
+      for (let i = 1; i <= 5; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        dot.innerHTML = "";
+        if (i < currentStep) {
+          dot.className = "step-dot completed";
+          dot.innerHTML = "&#10003;";
+        } else if (i === currentStep) {
+          dot.className = "step-dot active";
+        } else {
+          dot.className = "step-dot";
+        }
+      }
+    }
+
+    function renderSubServices() {
+      const container = document.getElementById("options-list-container");
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      const categoryData = subServicesData[selectedCategoryCode] || subServicesData['IM'];
+      const options = categoryData.options;
+
+      selectedSpecific = options[0];
+
+      options.forEach((optText, index) => {
+        const isSelected = index === 0;
+        const optionBox = document.createElement("div");
+        optionBox.className = `option-box ${isSelected ? 'selected' : ''}`;
+        optionBox.onclick = function () { selectSpecificService(optText, this); };
+
+        optionBox.innerHTML = `
       <span class="option-text">${optText}</span>
       <div class="radio-circle"></div>
     `;
 
-    container.appendChild(optionBox);
-  });
-}
-
-function updateDoctorDropdown() {
-  const docSelect = document.getElementById("doctorSelect");
-  if (!docSelect) return;
-
-  docSelect.innerHTML = '<option selected disabled value="">Select a specialist</option>';
-
-  const availableDoctors = doctorsData[selectedCategoryCode] || ["Celestia Santos"];
-
-  availableDoctors.forEach(doc => {
-    const opt = document.createElement("option");
-    opt.value = doc;
-    opt.innerText = doc;
-    docSelect.appendChild(opt);
-  });
-
-  selectedDoctor = "";
-}
-
-function showStep(step) {
-  document.querySelectorAll(".step-section").forEach(sec => sec.classList.remove("active"));
-  document.getElementById(`step-${step}`).classList.add("active");
-
-  if (step === 2) {
-    renderSubServices();
-  }
-
-  if (step === 3) {
-    updateDoctorDropdown();
-    refreshTimes();
-  }
-
-  if (step === 5) {
-    document.getElementById("rev-category").innerText = selectedCategoryName.toUpperCase();
-    document.getElementById("rev-specific").innerText = selectedSpecific.toUpperCase();
-
-    const currMonthStr = monthNames[currentCalDate.getMonth()].toUpperCase();
-    const currYearNum = currentCalDate.getFullYear();
-    document.getElementById("rev-date").innerText = `${currMonthStr} ${selectedDate}, ${currYearNum}`;
-
-    document.getElementById("rev-time").innerText = selectedTime.toUpperCase();
-    document.getElementById("rev-doctor").innerText = selectedDoctor ? selectedDoctor.toUpperCase() : "N/A";
-
-    const fn = document.getElementById("fn").value.trim();
-    const mn = document.getElementById("mn").value.trim();
-    const ln = document.getElementById("ln").value.trim();
-    const suffix = document.getElementById("suffix").value.trim();
-
-    const nameParts = [fn, mn, ln, suffix].filter(Boolean);
-    const fullName = nameParts.join(" ").toUpperCase();
-
-    document.getElementById("rev-name").innerText = fullName || "N/A";
-
-    const rawDob = document.getElementById("dob").value;
-    if (rawDob) {
-      const [yyyy, mm, dd] = rawDob.split("-");
-      document.getElementById("rev-dob").innerText = `${dd}-${mm}-${yyyy}`;
-    } else {
-      document.getElementById("rev-dob").innerText = "N/A";
+        container.appendChild(optionBox);
+      });
     }
 
-    document.getElementById("rev-sex").innerText = (document.getElementById("sex").value || "N/A").toUpperCase();
-    document.getElementById("rev-phone").innerText = document.getElementById("phone").value.trim() || "N/A";
-    document.getElementById("rev-email").innerText = document.getElementById("email").value.trim().toUpperCase() || "N/A";
-  }
+    function updateDoctorDropdown() {
+      const docSelect = document.getElementById("doctorSelect");
+      if (!docSelect) return;
 
-  updateHeader();
-}
+      docSelect.innerHTML = '<option selected disabled value="">Select a specialist</option>';
 
-function isGibberish(str) {
-  if (!str || str.length < 2) return true;
+      const availableDoctors = doctorsData[selectedCategoryCode] || ["Celestia Santos"];
 
-  const cleanStr = str.toLowerCase().replace(/[^a-z]/g, '');
-  if (cleanStr.length < 2) return true;
+      availableDoctors.forEach(doc => {
+        const opt = document.createElement("option");
+        opt.value = doc;
+        opt.innerText = doc;
+        docSelect.appendChild(opt);
+      });
 
-  if (/[bcdfghjklmnpqrstvwxyz]{4,}/.test(cleanStr)) return true;
-  if (!/[aeiouy]/.test(cleanStr)) return true;
-  if (/(.)\1{2,}/.test(cleanStr)) return true;
-
-  return false;
-}
-
-function nextStep() {
-  if (currentStep === 3) {
-    const docSelect = document.getElementById("doctorSelect");
-    const docErr = document.getElementById("err-doctor");
-    const fail = (msg) => { docErr.innerText = msg; docErr.classList.add("show"); };
-    docErr.classList.remove("show");
-    docSelect.classList.remove("error");
-    if (!docSelect.value) {
-      docSelect.classList.add("error");
-      return fail("Please choose an available doctor.");
-    }
-    selectedDoctor = docSelect.value;
-    if (selectedISO() < Auth.todayISO()) return fail("Please pick a date that is today or later.");
-    if (!selectedTime) return fail("Please choose a time.");
-    if (isTaken(selectedISO(), selectedTime)) {
-      refreshTimes();
-      return fail("That date and time is already booked. Please choose another time.");
-    }
-  }
-
-  if (currentStep === 4) {
-    const fnInput = document.getElementById("fn");
-    const lnInput = document.getElementById("ln");
-    const dobInput = document.getElementById("dob");
-    const sexInput = document.getElementById("sex");
-    const phoneInput = document.getElementById("phone");
-    const emailInput = document.getElementById("email");
-
-    const fn = fnInput.value.trim();
-    const ln = lnInput.value.trim();
-    const dob = dobInput.value.trim();
-    const sex = sexInput.value;
-    const phone = phoneInput.value.trim();
-    const email = emailInput.value.trim();
-
-    let isValid = true;
-
-    [fnInput, lnInput, dobInput, sexInput, phoneInput, emailInput].forEach(el => el.classList.remove("error"));
-    document.querySelectorAll(".error-msg").forEach(el => el.classList.remove("show"));
-
-    if (!fn || isGibberish(fn)) {
-      fnInput.classList.add("error");
-      const err = document.getElementById("err-fn");
-      err.innerText = "Please enter a valid first name.";
-      err.classList.add("show");
-      isValid = false;
-    }
-    if (!ln || isGibberish(ln)) {
-      lnInput.classList.add("error");
-      const err = document.getElementById("err-ln");
-      err.innerText = "Please enter a valid last name.";
-      err.classList.add("show");
-      isValid = false;
-    }
-    if (!dob) {
-      dobInput.classList.add("error");
-      document.getElementById("err-dob").classList.add("show");
-      isValid = false;
-    }
-    if (!sex) {
-      sexInput.classList.add("error");
-      document.getElementById("err-sex").classList.add("show");
-      isValid = false;
+      selectedDoctor = "";
     }
 
-    const phoneRegex = /^(09|\+639)\d{9}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    function showStep(step) {
+      document.querySelectorAll(".step-section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(`step-${step}`).classList.add("active");
 
-    const isPhoneValid = phoneRegex.test(phone);
-    const isEmailValid = emailRegex.test(email);
+      if (step === 2) {
+        renderSubServices();
+      }
 
-    if (!isPhoneValid && !isEmailValid) {
-      if (phone) phoneInput.classList.add("error");
-      if (email) emailInput.classList.add("error");
+      if (step === 3) {
+        updateDoctorDropdown();
+        refreshTimes();
+      }
 
-      const errContact = document.getElementById("err-contact");
-      errContact.innerText = "Please provide either a valid phone number (09XXXXXXXXX) or a valid email address.";
-      errContact.classList.add("show");
-      isValid = false;
+      if (step === 5) {
+        document.getElementById("rev-category").innerText = selectedCategoryName.toUpperCase();
+        document.getElementById("rev-specific").innerText = selectedSpecific.toUpperCase();
+
+        const currMonthStr = monthNames[currentCalDate.getMonth()].toUpperCase();
+        const currYearNum = currentCalDate.getFullYear();
+        document.getElementById("rev-date").innerText = `${currMonthStr} ${selectedDate}, ${currYearNum}`;
+
+        document.getElementById("rev-time").innerText = selectedTime.toUpperCase();
+        document.getElementById("rev-doctor").innerText = selectedDoctor ? selectedDoctor.toUpperCase() : "N/A";
+
+        const fn = document.getElementById("fn").value.trim();
+        const mn = document.getElementById("mn").value.trim();
+        const ln = document.getElementById("ln").value.trim();
+        const suffix = document.getElementById("suffix").value.trim();
+
+        const nameParts = [fn, mn, ln, suffix].filter(Boolean);
+        const fullName = nameParts.join(" ").toUpperCase();
+
+        document.getElementById("rev-name").innerText = fullName || "N/A";
+
+        const rawDob = document.getElementById("dob").value;
+        if (rawDob) {
+          const [yyyy, mm, dd] = rawDob.split("-");
+          document.getElementById("rev-dob").innerText = `${dd}-${mm}-${yyyy}`;
+        } else {
+          document.getElementById("rev-dob").innerText = "N/A";
+        }
+
+        document.getElementById("rev-sex").innerText = (document.getElementById("sex").value || "N/A").toUpperCase();
+        document.getElementById("rev-phone").innerText = document.getElementById("phone").value.trim() || "N/A";
+        document.getElementById("rev-email").innerText = document.getElementById("email").value.trim().toUpperCase() || "N/A";
+      }
+
+      updateHeader();
     }
 
-    if (!isValid) return;
-  }
+    function isGibberish(str) {
+      if (!str || str.length < 2) return true;
 
-  if (currentStep < 5) {
-    currentStep++;
-    showStep(currentStep);
-  }
-}
+      const cleanStr = str.toLowerCase().replace(/[^a-z]/g, '');
+      if (cleanStr.length < 2) return true;
 
-function prevStep() {
-  if (currentStep > 1) {
-    currentStep--;
-    showStep(currentStep);
-  }
-}
+      if (/[bcdfghjklmnpqrstvwxyz]{4,}/.test(cleanStr)) return true;
+      if (!/[aeiouy]/.test(cleanStr)) return true;
+      if (/(.)\1{2,}/.test(cleanStr)) return true;
 
-function selectServiceCategory(code, name, el) {
-  document.querySelectorAll(".service-card").forEach(c => c.classList.remove("selected"));
-  el.classList.add("selected");
-  selectedCategoryCode = code;
-  selectedCategoryName = name;
-}
-
-function selectSpecificService(name, el) {
-  document.querySelectorAll(".option-box").forEach(b => b.classList.remove("selected"));
-  el.classList.add("selected");
-  selectedSpecific = name;
-}
-
-function selectTime(time, el) {
-  document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
-  el.classList.add("selected");
-  selectedTime = time;
-  document.getElementById("err-doctor").classList.remove("show");
-}
-
-function renderCalendar() {
-  const grid = document.getElementById("calendar-days");
-  const monthTitle = document.getElementById("cal-month-title");
-  if (!grid || !monthTitle) return;
-
-  grid.innerHTML = "";
-
-  const year = currentCalDate.getFullYear();
-  const month = currentCalDate.getMonth();
-
-  monthTitle.innerText = `${monthNames[month]} ${year}`;
-
-  const firstDayIndex = new Date(year, month, 1).getDay();
-  const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
-
-  for (let i = 0; i < firstDayIndex; i++) {
-    const emptyCell = document.createElement("div");
-    emptyCell.className = "day-cell empty";
-    grid.appendChild(emptyCell);
-  }
-
-  for (let day = 1; day <= totalDaysInMonth; day++) {
-    const dayCell = document.createElement("div");
-    dayCell.className = "day-cell";
-
-    if (day.toString() === selectedDate && month === currentCalDate.getMonth()) {
-      dayCell.classList.add("selected");
+      return false;
     }
 
-    dayCell.innerText = day;
-    if (isoOf(year, month, day) < Auth.todayISO()) {
-      dayCell.classList.add("past");
-      dayCell.classList.remove("selected");
-      grid.appendChild(dayCell);
-      continue;
+    function nextStep() {
+      if (currentStep === 3) {
+        const docSelect = document.getElementById("doctorSelect");
+        const docErr = document.getElementById("err-doctor");
+        const fail = (msg) => { docErr.innerText = msg; docErr.classList.add("show"); };
+        docErr.classList.remove("show");
+        docSelect.classList.remove("error");
+        if (!docSelect.value) {
+          docSelect.classList.add("error");
+          return fail("Please choose an available doctor.");
+        }
+        selectedDoctor = docSelect.value;
+        if (selectedISO() < Auth.todayISO()) return fail("Please pick a date that is today or later.");
+        if (!selectedTime) return fail("Please choose a time.");
+        if (isTaken(selectedISO(), selectedTime)) {
+          refreshTimes();
+          return fail("That date and time is already booked. Please choose another time.");
+        }
+      }
+
+      if (currentStep === 4) {
+        const fnInput = document.getElementById("fn");
+        const lnInput = document.getElementById("ln");
+        const dobInput = document.getElementById("dob");
+        const sexInput = document.getElementById("sex");
+        const phoneInput = document.getElementById("phone");
+        const emailInput = document.getElementById("email");
+
+        const fn = fnInput.value.trim();
+        const ln = lnInput.value.trim();
+        const dob = dobInput.value.trim();
+        const sex = sexInput.value;
+        const phone = phoneInput.value.trim();
+        const email = emailInput.value.trim();
+
+        let isValid = true;
+
+        [fnInput, lnInput, dobInput, sexInput, phoneInput, emailInput].forEach(el => el.classList.remove("error"));
+        document.querySelectorAll(".error-msg").forEach(el => el.classList.remove("show"));
+
+        if (!fn || isGibberish(fn)) {
+          fnInput.classList.add("error");
+          const err = document.getElementById("err-fn");
+          err.innerText = "Please enter a valid first name.";
+          err.classList.add("show");
+          isValid = false;
+        }
+        if (!ln || isGibberish(ln)) {
+          lnInput.classList.add("error");
+          const err = document.getElementById("err-ln");
+          err.innerText = "Please enter a valid last name.";
+          err.classList.add("show");
+          isValid = false;
+        }
+        if (!dob) {
+          dobInput.classList.add("error");
+          document.getElementById("err-dob").classList.add("show");
+          isValid = false;
+        }
+        if (!sex) {
+          sexInput.classList.add("error");
+          document.getElementById("err-sex").classList.add("show");
+          isValid = false;
+        }
+
+        const phoneRegex = /^(09|\+639)\d{9}$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        const isPhoneValid = phoneRegex.test(phone);
+        const isEmailValid = emailRegex.test(email);
+
+        if (!isPhoneValid && !isEmailValid) {
+          if (phone) phoneInput.classList.add("error");
+          if (email) emailInput.classList.add("error");
+
+          const errContact = document.getElementById("err-contact");
+          errContact.innerText = "Please provide either a valid phone number (09XXXXXXXXX) or a valid email address.";
+          errContact.classList.add("show");
+          isValid = false;
+        }
+
+        if (!isValid) return;
+      }
+
+      if (currentStep < 5) {
+        currentStep++;
+        showStep(currentStep);
+      }
     }
-    dayCell.onclick = function(e) {
-      e.preventDefault();
-      document.querySelectorAll(".day-cell").forEach(c => c.classList.remove("selected"));
-      this.classList.add("selected");
-      selectedDate = day.toString();
-      refreshTimes();
+
+    function prevStep() {
+      if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    }
+
+    function selectServiceCategory(code, name, el) {
+      document.querySelectorAll(".service-card").forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedCategoryCode = code;
+      selectedCategoryName = name;
+    }
+
+    function selectSpecificService(name, el) {
+      document.querySelectorAll(".option-box").forEach(b => b.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedSpecific = name;
+    }
+
+    function selectTime(time, el) {
+      document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedTime = time;
       document.getElementById("err-doctor").classList.remove("show");
-    };
+    }
 
-    grid.appendChild(dayCell);
-  }
-}
+    function renderCalendar() {
+      const grid = document.getElementById("calendar-days");
+      const monthTitle = document.getElementById("cal-month-title");
+      if (!grid || !monthTitle) return;
 
-function changeMonth(direction) {
-  currentCalDate.setMonth(currentCalDate.getMonth() + direction);
-  renderCalendar();
-  refreshTimes();
-}
+      grid.innerHTML = "";
 
-let submitting = false;
-function submitForm() {
-  if (submitting) return;
-  if (isTaken(selectedISO(), selectedTime)) {          // booked meanwhile (e.g. in another tab)
-    currentStep = 3; showStep(3);
-    const e = document.getElementById("err-doctor");
-    e.innerText = "That date and time is already booked. Please choose another time."; e.classList.add("show");
-    return;
-  }
-  submitting = true;
-  const list = Auth.getAppointments();
-  const nextId = list.reduce((n, a) => Math.max(n, a.id), 0) + 1;
-  const val = (id) => document.getElementById(id).value.trim();
-  list.push({
-    id: nextId,
-    doctor: ({ "Dr. Celestia Santos": "celestia", "Dr. Rich Reyes": "rich", "Dr. Mich Collins": "mich" })[selectedDoctor] || "",
-    doctorName: selectedDoctor,
-    spec: (subServicesData[selectedCategoryCode] || {}).subtitle ? subServicesData[selectedCategoryCode].subtitle.replace(/[()]/g, "").split(",")[0].trim() : "",
-    service: selectedCategoryName,
-    specific: selectedSpecific,
-    status: "Confirmed",
-    date: selectedISO(),
-    time: slotLabel(selectedTime),
-    patient: { first: val("fn"), middle: val("mn"), last: val("ln"), suffix: val("suffix"), dob: val("dob"), sex: val("sex"), phone: val("phone"), email: val("email") }
-  });
-  Auth.saveAppointments(list);
-  location.href = "appointments.html?booked=1";
-}
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
 
-renderCalendar();
-refreshTimes();
+      monthTitle.innerText = `${monthNames[month]} ${year}`;
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement("div");
+        emptyCell.className = "day-cell empty";
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= totalDaysInMonth; day++) {
+        const dayCell = document.createElement("div");
+        dayCell.className = "day-cell";
+
+        if (day.toString() === selectedDate && month === currentCalDate.getMonth()) {
+          dayCell.classList.add("selected");
+        }
+
+        dayCell.innerText = day;
+        if (isoOf(year, month, day) < Auth.todayISO()) {
+          dayCell.classList.add("past");
+          dayCell.classList.remove("selected");
+          grid.appendChild(dayCell);
+          continue;
+        }
+        dayCell.onclick = function (e) {
+          e.preventDefault();
+          document.querySelectorAll(".day-cell").forEach(c => c.classList.remove("selected"));
+          this.classList.add("selected");
+          selectedDate = day.toString();
+          refreshTimes();
+          document.getElementById("err-doctor").classList.remove("show");
+        };
+
+        grid.appendChild(dayCell);
+      }
+    }
+
+    function changeMonth(direction) {
+      currentCalDate.setMonth(currentCalDate.getMonth() + direction);
+      renderCalendar();
+      refreshTimes();
+    }
+
+    let submitting = false;
+    function submitForm() {
+      if (submitting) return;
+      if (isTaken(selectedISO(), selectedTime)) {          // booked meanwhile (e.g. in another tab)
+        currentStep = 3; showStep(3);
+        const e = document.getElementById("err-doctor");
+        e.innerText = "That date and time is already booked. Please choose another time."; e.classList.add("show");
+        return;
+      }
+      submitting = true;
+      const list = Auth.getAppointments();
+      const nextId = list.reduce((n, a) => Math.max(n, a.id), 0) + 1;
+      const val = (id) => document.getElementById(id).value.trim();
+      list.push({
+        id: nextId,
+        doctor: ({ "Dr. Celestia Santos": "celestia", "Dr. Rich Reyes": "rich", "Dr. Mich Collins": "mich" })[selectedDoctor] || "",
+        doctorName: selectedDoctor,
+        spec: (subServicesData[selectedCategoryCode] || {}).subtitle ? subServicesData[selectedCategoryCode].subtitle.replace(/[()]/g, "").split(",")[0].trim() : "",
+        service: selectedCategoryName,
+        specific: selectedSpecific,
+        status: "Confirmed",
+        date: selectedISO(),
+        time: slotLabel(selectedTime),
+        patient: { first: val("fn"), middle: val("mn"), last: val("ln"), suffix: val("suffix"), dob: val("dob"), sex: val("sex"), phone: val("phone"), email: val("email") }
+      });
+      Auth.saveAppointments(list);
+      location.href = "appointment.html?booked=1";
+    }
+
+    renderCalendar();
+    refreshTimes();
   </script>
 </body>
+
 </html>

@@ -122,6 +122,8 @@ class FirestoreStore:
             return True
         except self._exceptions.AlreadyExists:
             return False
+        except self._exceptions.GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
 
     def update(self, uid, fields):
         try:
@@ -132,6 +134,10 @@ class FirestoreStore:
 
     def delete(self, uid):
         self._col.document(uid).delete()
+
+
+class DatabaseUnavailable(Exception):
+    """The account database could not complete a request."""
 
 
 def make_store():
@@ -347,7 +353,13 @@ def signup():
         "created_at": time.time(),
     }
 
-    if not store.create(uid_for(login_id), doc):
+    try:
+        created = store.create(uid_for(login_id), doc)
+    except DatabaseUnavailable:
+        app.logger.exception("Account creation failed because Firestore is unavailable.")
+        return fail("database_unavailable", 503)
+
+    if not created:
         return fail("exists", 409)
 
     return jsonify(ok=True, id=login_id), 201

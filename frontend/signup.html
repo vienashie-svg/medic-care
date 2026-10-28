@@ -211,7 +211,7 @@
 
             <p class="login-link">
                 <span data-i18n="sig.have">Already have an account?</span>
-                <a href="index.html" data-i18n="sig.login">Log In</a>
+                <a href="login.html" data-i18n="sig.login">Log In</a>
             </p>
         </form>
     </main>
@@ -230,6 +230,10 @@ const fields = {
 
 /* ===== Text that has no entry in languages.js yet ===== */
 const LOCAL = {
+    "err.server": {
+        en: "Open the app through its backend server: run `python backend/app.py`, then visit http://127.0.0.1:5000/signup.html.",
+        fil: "Buksan ang app sa backend server: patakbuhin ang `python backend/app.py`, saka pumunta sa http://127.0.0.1:5000/signup.html."
+    },
     "err.fail": {
         en: "Unable to create your account. Please try again.",
         fil: "Hindi magawa ang iyong account. Subukan muli."
@@ -237,6 +241,10 @@ const LOCAL = {
     "err.network": {
         en: "Can't reach the server. Check your connection and try again.",
         fil: "Hindi makakonekta sa server. Suriin ang iyong koneksyon at subukan muli."
+    },
+    "err.database": {
+        en: "Account creation is temporarily unavailable. The server's Firebase database credentials need to be checked.",
+        fil: "Pansamantalang hindi makagawa ng account. Kailangang suriin ang Firebase database credentials ng server."
     }
 };
 
@@ -297,7 +305,9 @@ const serverErrors = {
     invalid_name: ["name", "prof.err.name"],
     invalid_id: ["id", "sig.err.id"],
     weak_password: ["pw", "sig.err.len"],
-    network: ["id", "err.network"]
+    network: ["id", "err.network"],
+    server_required: ["id", "err.server"],
+    database_unavailable: ["id", "err.database"]
 };
 
 byId("signupForm").addEventListener("submit", (e) => {
@@ -341,7 +351,7 @@ byId("signupForm").addEventListener("submit", (e) => {
         return;
     }
 
-    location.href = "index.html?created=1";
+    location.href = "login.html?created=1";
 });
     </script>
 </body>

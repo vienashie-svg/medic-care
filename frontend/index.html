@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-requires-login>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,145 +10,635 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-/* MEDIC CARE – Homepage (self-contained: tokens, sidebar + page styles) */
-:root {
-  --navy: #1b3a8f; --navy-deep: #16296b; --text: #1c1c1e; --radius-pill: 999px;
-  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  /* Hero photo. Swap for a local file (e.g. url("images/hero.png")) so the page does not depend on an outside site. */
-  --hero-img: url("hero.png");
-}
-* { box-sizing: border-box; }
-html { min-height: 100%; }
-body { margin: 0; min-height: 100vh; font-family: var(--font); color: var(--text); background: #f1f1f1; }
-button { font: inherit; cursor: pointer; }
-a { color: inherit; }
-:focus-visible { outline: 3px solid #5b7bd6; outline-offset: 2px; }
-.sidebar :focus-visible { outline-color: #fff; }
-.icon-btn { background: none; border: 0; color: var(--navy); padding: 6px; display: grid; place-items: center; border-radius: 8px; }
-.icon-btn.light { color: #fff; font-size: 30px; line-height: 1; margin-left: auto; }
+    /* MEDIC CARE – Homepage (self-contained: tokens, sidebar + page styles) */
+    :root {
+      --navy: #1b3a8f;
+      --navy-deep: #16296b;
+      --text: #1c1c1e;
+      --radius-pill: 999px;
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      /* Hero photo. Swap for a local file (e.g. url("images/hero.png")) so the page does not depend on an outside site. */
+      --hero-img: url("herobg.png");
+    }
 
-/* ===== Sidebar ===== */
-.scrim { position: fixed; inset: 0; background: rgba(10, 18, 50, .45); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 40; }
-.scrim.open { opacity: 1; pointer-events: auto; }
-.sidebar {
-  position: fixed; top: 0; left: 0; bottom: 0; width: min(290px, 86vw); z-index: 50;
-  display: flex; flex-direction: column; padding: 20px 18px 28px;
-  background: #142a6b; box-shadow: 4px 0 22px rgba(10, 20, 60, .35);
-  transform: translateX(-100%); visibility: hidden;
-  transition: transform .35s cubic-bezier(.22, .61, .36, 1), visibility 0s linear .35s;
-}
-.sidebar.open { transform: none; visibility: visible; transition-delay: 0s; }
-.side-profile { display: flex; align-items: center; gap: 12px; color: #fff; padding: 0 2px; }
-.side-avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; overflow: hidden;
-  background: #2a9a92; color: #fff; font-weight: 700; font-size: 16px;
-}
-.side-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.side-info { display: flex; flex-direction: column; min-width: 0; }
-.side-info strong { font-size: 17px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.side-info span { font-size: 11.500px; font-weight: 500; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sidebar .icon-btn.light { margin-left: auto; color: #aab7de; font-size: 28px; padding: 2px 8px; }
-.sidebar .icon-btn.light:hover { color: #fff; }
-.sidebar hr { border: 0; border-top: 2px solid #8d98bd; margin: 18px 0 20px; opacity: .8; }
-.side-search {
-  display: flex; align-items: center; gap: 12px; padding: 11px 14px; margin-bottom: 18px;
-  background: #2b4380; border-radius: 8px; color: #a3b0d6;
-}
-.side-search svg { width: 24px; height: 24px; flex: none; }
-.side-search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: #fff; font-size: 17px; font-weight: 500; padding: 0; }
-.side-search input::placeholder { color: #a3b0d6; opacity: 1; }
-.side-search input::-webkit-search-cancel-button { filter: invert(1); opacity: .6; }
-.side-search:focus-within { box-shadow: 0 0 0 2px #7f9df0; }
-.sidebar nav { flex: 1; overflow-y: auto; }
-.sidebar nav a, .logout {
-  display: flex; align-items: center; gap: 22px; padding: 10px 10px; margin-bottom: 4px;
-  color: #fff; text-decoration: none; font-weight: 600; font-size: 15px; border-radius: 8px; transition: background .15s;
-}
-.sidebar nav a svg, .logout svg { width: 24px; height: 24px; flex: none; color: #8997c4; }
-.sidebar nav a:hover, .logout:hover { background: rgba(255, 255, 255, .09); }
-.sidebar nav a.active { background: rgba(255, 255, 255, .15); }
-.sidebar nav a.active svg { color: #fff; }
-.sidebar nav a[hidden] { display: none; }
-.no-match { color: #a3b0d6; font-size: 14px; padding: 8px 10px; margin: 0; }
+    * {
+      box-sizing: border-box;
+    }
 
-/* ===== Page ===== */
-.site { display: block; max-width: 980px; margin: 0 auto; background: #f1f1f1; padding-bottom: 56px; }
+    html {
+      min-height: 100%;
+    }
 
-/* hero */
-.hero {
-  position: relative; display: flex; flex-direction: column; min-height: 46vw;
-  padding: 18px 4.4% 20px; color: #fff; overflow: hidden;
-  background: #b9c3e6 var(--hero-img) right center / cover no-repeat;
-  border-bottom-right-radius: 40px; border-bottom-left-radius: 6px;
-}
-@media (min-width: 980px) { .hero { min-height: 450px; } }
-.topbar {
-  position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between;
-  height: 38px; padding: 0 16px; background: rgba(176, 188, 225, .8); border-radius: var(--radius-pill);
-}
-.brand { display: flex; align-items: center; gap: 6px; }
-.brand-name { font-weight: 800; font-size: 22px; letter-spacing: .3px; color: #0e2a7d; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background: #f1f1f1;
+    }
 
-.hero-copy { position: relative; z-index: 2; margin-top: 22px; max-width: 46%; }
-.hero h1 { margin: 0; font-size: clamp(25px, 4.5vw, 44px); line-height: 1; font-weight: 800; letter-spacing: -.5px; color: #0a2670; }
-.lead { margin: 6px 0 0; font-size: clamp(14px, 2.55vw, 25px); line-height: 1.07; font-weight: 500; color: #fff; text-shadow: 0 1px 3px rgba(20, 40, 110, .35); }
-.book {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 7px 14px; border-radius: 5px;
-  background: #2057bd; color: #fff; font-size: 11px; font-weight: 600; letter-spacing: .3px; text-decoration: none;
-  box-shadow: 0 2px 5px rgba(20, 40, 110, .4); transition: background .15s;
-}
-.book::after { content: "➜"; }
-.book:hover { background: #16469f; }
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
 
-.hero-stats { position: relative; z-index: 2; margin-top: auto; padding-top: 16px; display: flex; align-items: center; }
-.rating { width: 33%; display: flex; flex-direction: column; gap: 2px; font-size: clamp(10px, 1.55vw, 15px); text-shadow: 0 1px 2px rgba(20, 40, 110, .4); }
-.stars { color: #ffc53d; letter-spacing: 2px; font-size: clamp(11px, 1.8vw, 17px); }
-.hours, .experts { display: flex; align-items: center; gap: 8px; font-size: clamp(8.5px, 1.35vw, 13px); font-weight: 600; line-height: 1.2; text-shadow: 0 1px 2px rgba(20, 40, 110, .4); }
-.hours svg, .experts svg { width: clamp(20px, 3.4vw, 32px); height: auto; flex: none; }
-.hours b { display: block; font-weight: 600; }
-.vline { width: 2px; height: clamp(22px, 4vw, 34px); margin: 0 clamp(8px, 2.5vw, 22px); background: #14213d; }
-.experts { max-width: 140px; }
+    a {
+      color: inherit;
+    }
 
-/* services */
-.services { padding: 22px 4% 0; }
-.services h2, .about h2, .contact h2 { margin: 0; font-size: 13.5px; font-weight: 800; letter-spacing: .2px; text-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
-.services h2 { text-align: center; margin-bottom: 14px; }
-.svc-bar {
-  list-style: none; margin: 0; padding: 10px 6px; display: grid; grid-template-columns: repeat(8, minmax(104px, 1fr)); overflow-x: auto;
-  background: #f4f4f4; border-radius: 18px; box-shadow: 0 0 4px rgba(0, 0, 0, .45), inset 0 0 3px rgba(0, 0, 0, .12);
-}
-.svc-bar li { border-left: 1px solid #2b2b33; }
-.svc-bar li:first-child { border-left: 0; }
-.svc-bar a { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 6px; text-decoration: none; text-align: center; border-radius: 10px; transition: background .15s; }
-.svc-bar a:hover { background: rgba(32, 87, 189, .08); }
-.svc-ico { width: 30px; height: 30px; border-radius: 50%; background: #dfe5f2; display: grid; place-items: center; }
-.svc-ico svg { width: 18px; height: 18px; }
-.svc-name { max-width: 100%; font-size: 10.5px; font-weight: 500; letter-spacing: .2px; line-height: 1.2; color: #222; overflow-wrap: anywhere; }
+    :focus-visible {
+      outline: 3px solid #5b7bd6;
+      outline-offset: 2px;
+    }
 
-/* about + contact */
-.info { display: grid; grid-template-columns: 1fr minmax(240px, 36%); gap: 4% ; align-items: start; padding: 40px 4% 0; }
-.about h2 { font-size: 12px; margin-bottom: 10px; }
-.about p { margin: 0 0 16px; font-size: 14px; line-height: 1.38; color: #4a4a50; }
-.contact { background: #dfe3f1; border-radius: 10px; padding: 14px 14px 18px; box-shadow: 0 2px 6px rgba(40, 55, 110, .35); }
-.contact h2 { font-size: 12px; margin-bottom: 12px; }
-.contact ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.contact li { display: flex; align-items: center; gap: 12px; font-size: 13.5px; font-weight: 500; line-height: 1.3; }
-.contact a { text-decoration: none; } .contact a:hover { text-decoration: underline; }
-.c-ico { width: 26px; height: 26px; border-radius: 50%; flex: none; display: grid; place-items: center; background: #1b3a8f; }
-.c-ico svg { width: 15px; height: 15px; }
+    .sidebar :focus-visible {
+      outline-color: #fff;
+    }
 
-@media (max-width: 760px) {
-  .hero { min-height: 0; padding-bottom: 16px; }
-  .hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(36, 62, 140, .6), rgba(36, 62, 140, .15) 85%); }
-  .hero-copy { max-width: 66%; margin-top: 16px; }
-  .hero-stats { flex-wrap: wrap; row-gap: 8px; }
-  .rating { width: 100%; flex-direction: row; align-items: center; gap: 8px; }
-  .info { grid-template-columns: 1fr; }
-}
-/* Reduced motion: also applies to the sidebar and scrim, which open/close instantly */
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+    .icon-btn {
+      background: none;
+      border: 0;
+      color: var(--navy);
+      padding: 6px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+    }
+
+    .icon-btn.light {
+      color: #fff;
+      font-size: 30px;
+      line-height: 1;
+      margin-left: auto;
+    }
+
+    /* ===== Sidebar ===== */
+    .scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 18, 50, .45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+      z-index: 40;
+    }
+
+    .scrim.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(290px, 86vw);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 18px 28px;
+      background: #142a6b;
+      box-shadow: 4px 0 22px rgba(10, 20, 60, .35);
+      transform: translateX(-100%);
+      visibility: hidden;
+      transition: transform .35s cubic-bezier(.22, .61, .36, 1), visibility 0s linear .35s;
+    }
+
+    .sidebar.open {
+      transform: none;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+
+    .side-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #fff;
+      padding: 0 2px;
+    }
+
+    .side-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      flex: none;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #2a9a92;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .side-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .side-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .side-info strong {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .side-info span {
+      font-size: 11.500px;
+      font-weight: 500;
+      letter-spacing: .3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar .icon-btn.light {
+      margin-left: auto;
+      color: #aab7de;
+      font-size: 28px;
+      padding: 2px 8px;
+    }
+
+    .sidebar .icon-btn.light:hover {
+      color: #fff;
+    }
+
+    .sidebar hr {
+      border: 0;
+      border-top: 2px solid #8d98bd;
+      margin: 18px 0 20px;
+      opacity: .8;
+    }
+
+    .side-search {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      margin-bottom: 18px;
+      background: #2b4380;
+      border-radius: 8px;
+      color: #a3b0d6;
+    }
+
+    .side-search svg {
+      width: 24px;
+      height: 24px;
+      flex: none;
+    }
+
+    .side-search input {
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: 0;
+      outline: 0;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 500;
+      padding: 0;
+    }
+
+    .side-search input::placeholder {
+      color: #a3b0d6;
+      opacity: 1;
+    }
+
+    .side-search input::-webkit-search-cancel-button {
+      filter: invert(1);
+      opacity: .6;
+    }
+
+    .side-search:focus-within {
+      box-shadow: 0 0 0 2px #7f9df0;
+    }
+
+    .sidebar nav {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar nav a,
+    .logout {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 10px 10px;
+      margin-bottom: 4px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 8px;
+      transition: background .15s;
+    }
+
+    .sidebar nav a svg,
+    .logout svg {
+      width: 24px;
+      height: 24px;
+      flex: none;
+      color: #8997c4;
+    }
+
+    .sidebar nav a:hover,
+    .logout:hover {
+      background: rgba(255, 255, 255, .09);
+    }
+
+    .sidebar nav a.active {
+      background: rgba(255, 255, 255, .15);
+    }
+
+    .sidebar nav a.active svg {
+      color: #fff;
+    }
+
+    .sidebar nav a[hidden] {
+      display: none;
+    }
+
+    .no-match {
+      color: #a3b0d6;
+      font-size: 14px;
+      padding: 8px 10px;
+      margin: 0;
+    }
+
+    /* ===== Page ===== */
+    .site {
+      display: block;
+      max-width: 980px;
+      margin: 0 auto;
+      background: #f1f1f1;
+      padding-bottom: 56px;
+    }
+
+    /* hero */
+    .hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 46vw;
+      padding: 18px 4.4% 20px;
+      color: #fff;
+      overflow: hidden;
+      background: #b9c3e6 var(--hero-img) right center / cover no-repeat;
+      border-bottom-right-radius: 40px;
+      border-bottom-left-radius: 6px;
+    }
+
+    @media (min-width: 980px) {
+      .hero {
+        min-height: 450px;
+      }
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 38px;
+      padding: 0 16px;
+      background: rgba(176, 188, 225, .8);
+      border-radius: var(--radius-pill);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-name {
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: .3px;
+      color: #0e2a7d;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      margin-top: 22px;
+      max-width: 46%;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(25px, 4.5vw, 44px);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -.5px;
+      color: #0a2670;
+    }
+
+    .lead {
+      margin: 6px 0 0;
+      font-size: clamp(14px, 2.55vw, 25px);
+      line-height: 1.07;
+      font-weight: 500;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(20, 40, 110, .35);
+    }
+
+    .book {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding: 7px 14px;
+      border-radius: 5px;
+      background: #2057bd;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      text-decoration: none;
+      box-shadow: 0 2px 5px rgba(20, 40, 110, .4);
+      transition: background .15s;
+    }
+
+    .book::after {
+      content: "➜";
+    }
+
+    .book:hover {
+      background: #16469f;
+    }
+
+    .hero-stats {
+      position: relative;
+      z-index: 2;
+      margin-top: auto;
+      padding-top: 16px;
+      display: flex;
+      align-items: center;
+    }
+
+    .rating {
+      width: 33%;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: clamp(10px, 1.55vw, 15px);
+      text-shadow: 0 1px 2px rgba(20, 40, 110, .4);
+    }
+
+    .stars {
+      color: #ffc53d;
+      letter-spacing: 2px;
+      font-size: clamp(11px, 1.8vw, 17px);
+    }
+
+    .hours,
+    .experts {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: clamp(8.5px, 1.35vw, 13px);
+      font-weight: 600;
+      line-height: 1.2;
+      text-shadow: 0 1px 2px rgba(20, 40, 110, .4);
+    }
+
+    .hours svg,
+    .experts svg {
+      width: clamp(20px, 3.4vw, 32px);
+      height: auto;
+      flex: none;
+    }
+
+    .hours b {
+      display: block;
+      font-weight: 600;
+    }
+
+    .vline {
+      width: 2px;
+      height: clamp(22px, 4vw, 34px);
+      margin: 0 clamp(8px, 2.5vw, 22px);
+      background: #14213d;
+    }
+
+    .experts {
+      max-width: 140px;
+    }
+
+    /* services */
+    .services {
+      padding: 22px 4% 0;
+    }
+
+    .services h2,
+    .about h2,
+    .contact h2 {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    }
+
+    .services h2 {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .svc-bar {
+      list-style: none;
+      margin: 0;
+      padding: 10px 6px;
+      display: grid;
+      grid-template-columns: repeat(8, minmax(104px, 1fr));
+      overflow-x: auto;
+      background: #f4f4f4;
+      border-radius: 18px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, .45), inset 0 0 3px rgba(0, 0, 0, .12);
+    }
+
+    .svc-bar li {
+      border-left: 1px solid #2b2b33;
+    }
+
+    .svc-bar li:first-child {
+      border-left: 0;
+    }
+
+    .svc-bar a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      text-decoration: none;
+      text-align: center;
+      border-radius: 10px;
+      transition: background .15s;
+    }
+
+    .svc-bar a:hover {
+      background: rgba(32, 87, 189, .08);
+    }
+
+    .svc-ico {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #dfe5f2;
+      display: grid;
+      place-items: center;
+    }
+
+    .svc-ico svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .svc-name {
+      max-width: 100%;
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: .2px;
+      line-height: 1.2;
+      color: #222;
+      overflow-wrap: anywhere;
+    }
+
+    /* about + contact */
+    .info {
+      display: grid;
+      grid-template-columns: 1fr minmax(240px, 36%);
+      gap: 4%;
+      align-items: start;
+      padding: 40px 4% 0;
+    }
+
+    .about h2 {
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .about p {
+      margin: 0 0 16px;
+      font-size: 14px;
+      line-height: 1.38;
+      color: #4a4a50;
+    }
+
+    .contact {
+      background: #dfe3f1;
+      border-radius: 10px;
+      padding: 14px 14px 18px;
+      box-shadow: 0 2px 6px rgba(40, 55, 110, .35);
+    }
+
+    .contact h2 {
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .contact ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .contact li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13.5px;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .contact a {
+      text-decoration: none;
+    }
+
+    .contact a:hover {
+      text-decoration: underline;
+    }
+
+    .c-ico {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex: none;
+      display: grid;
+      place-items: center;
+      background: #1b3a8f;
+    }
+
+    .c-ico svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    @media (max-width: 760px) {
+      .hero {
+        min-height: 0;
+        padding-bottom: 16px;
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(36, 62, 140, .6), rgba(36, 62, 140, .15) 85%);
+      }
+
+      .hero-copy {
+        max-width: 66%;
+        margin-top: 16px;
+      }
+
+      .hero-stats {
+        flex-wrap: wrap;
+        row-gap: 8px;
+      }
+
+      .rating {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .info {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Reduced motion: also applies to the sidebar and scrim, which open/close instantly */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        transition: none !important;
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Sidebar -->
@@ -159,22 +650,47 @@ a { color: inherit; }
         <strong id="sideName">Final Project</strong>
         <span id="sideEmail">finalproject@gmail.com</span>
       </div>
-      <button class="icon-btn light" id="closeSidebar" aria-label="Close menu" data-i18n-aria="menu.close">&times;</button>
+      <button class="icon-btn light" id="closeSidebar" aria-label="Close menu"
+        data-i18n-aria="menu.close">&times;</button>
     </div>
     <hr>
     <label class="side-search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" aria-hidden="true"><circle cx="10.500" cy="10.500" r="6.500"/><path d="m20 20-4.800-4.800"/></svg>
-      <input type="search" id="navSearch" placeholder="Search..." data-i18n-ph="nav.search" aria-label="Search menu" autocomplete="off">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round"
+        aria-hidden="true">
+        <circle cx="10.500" cy="10.500" r="6.500" />
+        <path d="m20 20-4.800-4.800" />
+      </svg>
+      <input type="search" id="navSearch" placeholder="Search..." data-i18n-ph="nav.search" aria-label="Search menu"
+        autocomplete="off">
     </label>
     <nav id="nav">
-      <a href="index.html" class="active" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11.500 12 3l9 8.500V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nav.dashboard">Dashboard</span></a>
-      <a href="profile.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.500" r="4.500"/><path d="M3.500 21c0-4.500 3.800-7 8.500-7s8.500 2.500 8.500 7z"/></svg><span data-i18n="nav.profile">Profile</span></a>
-      <a href="appointments.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zM5 9h14v11H5z"/><path d="M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 15h2v2H7zm4 0h2v2h-2z"/></svg><span data-i18n="nav.appointment">Appointment</span></a>
-      <a href="medical-history.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.500L18.500 9z"/></svg><span data-i18n="nav.history">Medical History</span></a>
-      <a href="settings.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.140 12.940c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.030-1.580a.49.49 0 0 0 .12-.61l-1.920-3.320a.488.488 0 0 0-.59-.22l-2.390.96c-.5-.38-1.030-.7-1.620-.94l-.36-2.540a.484.484 0 0 0-.48-.41h-3.840c-.24 0-.43.17-.47.41l-.36 2.540c-.59.24-1.130.57-1.620.94l-2.390-.96c-.22-.08-.47 0-.59.22L2.740 8.870c-.12.21-.08.47.12.61l2.030 1.580c-.05.3-.09.63-.09.94s.02.64.07.94l-2.030 1.580a.49.49 0 0 0-.12.61l1.920 3.320c.12.22.37.29.59.22l2.390-.96c.5.38 1.030.7 1.620.94l.36 2.540c.05.24.24.41.48.41h3.840c.24 0 .44-.17.47-.41l.36-2.540c.59-.24 1.130-.56 1.620-.94l2.390.96c.22.08.47 0 .59-.22l1.920-3.320c.12-.22.07-.47-.12-.61zM12 15.600c-1.980 0-3.600-1.620-3.600-3.600s1.620-3.600 3.600-3.600 3.600 1.620 3.600 3.600-1.620 3.600-3.600 3.600z"/></svg><span data-i18n="nav.settings">Settings</span></a>
+      <a href="index.html" class="active" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor"
+          aria-hidden="true">
+          <path d="M3 11.500 12 3l9 8.500V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+        </svg><span data-i18n="nav.dashboard">Dashboard</span></a>
+      <a href="profile.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="7.500" r="4.500" />
+          <path d="M3.500 21c0-4.500 3.800-7 8.500-7s8.500 2.500 8.500 7z" />
+        </svg><span data-i18n="nav.profile">Profile</span></a>
+      <a href="appointment.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd"
+            d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zM5 9h14v11H5z" />
+          <path d="M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 15h2v2H7zm4 0h2v2h-2z" />
+        </svg><span data-i18n="nav.appointment">Appointment</span></a>
+      <a href="medical_history.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.500L18.500 9z" />
+        </svg><span data-i18n="nav.history">Medical History</span></a>
+      <a href="settings.html"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M19.140 12.940c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.030-1.580a.49.49 0 0 0 .12-.61l-1.920-3.320a.488.488 0 0 0-.59-.22l-2.390.96c-.5-.38-1.030-.7-1.620-.94l-.36-2.540a.484.484 0 0 0-.48-.41h-3.840c-.24 0-.43.17-.47.41l-.36 2.540c-.59.24-1.130.57-1.620.94l-2.390-.96c-.22-.08-.47 0-.59.22L2.740 8.870c-.12.21-.08.47.12.61l2.030 1.580c-.05.3-.09.63-.09.94s.02.64.07.94l-2.030 1.580a.49.49 0 0 0-.12.61l1.920 3.320c.12.22.37.29.59.22l2.390-.96c.5.38 1.030.7 1.620.94l.36 2.540c.05.24.24.41.48.41h3.840c.24 0 .44-.17.47-.41l.36-2.540c.59-.24 1.130-.56 1.620-.94l2.390.96c.22.08.47 0 .59-.22l1.920-3.320c.12-.22.07-.47-.12-.61zM12 15.600c-1.980 0-3.600-1.620-3.600-3.600s1.620-3.600 3.600-3.600 3.600 1.620 3.600 3.600-1.620 3.600-3.600 3.600z" />
+        </svg><span data-i18n="nav.settings">Settings</span></a>
       <p class="no-match" id="noMatch" hidden data-i18n="nav.nomatch">No matching pages</p>
     </nav>
-    <a href="login.html" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5M8 8l-4 4 4 4M4 12h11"/></svg><span data-i18n="nav.logout">Logout</span></a>
+    <a href="login.html" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.200"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5M8 8l-4 4 4 4M4 12h11" />
+      </svg><span data-i18n="nav.logout">Logout</span></a>
   </aside>
 
   <main class="site">
@@ -182,35 +698,55 @@ a { color: inherit; }
     <!-- Hero -->
     <section class="hero">
       <header class="topbar">
-        <button class="icon-btn" id="menuBtn" aria-label="Open menu" data-i18n-aria="menu.open" aria-expanded="false" aria-controls="sidebar">
-          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M2 5h18M2 11h18M2 17h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+        <button class="icon-btn" id="menuBtn" aria-label="Open menu" data-i18n-aria="menu.open" aria-expanded="false"
+          aria-controls="sidebar">
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+            <path d="M2 5h18M2 11h18M2 17h18" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          </svg>
         </button>
         <div class="brand">
           <span class="brand-name">MEDIC CARE</span>
           <svg class="brand-logo" width="30" height="34" viewBox="0 0 34 38" aria-hidden="true">
-            <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb4c9"/><stop offset="1" stop-color="#2b4fb8"/></linearGradient></defs>
-            <path d="M17 1.5 31 6.5v11c0 9-6 15.5-14 19C9 33 3 26.500 3 17.500v-11z" fill="url(#sg)" stroke="#223c93" stroke-width="2"/>
-            <path d="M17 8.500 26 12v6c0 5.500-3.500 9.500-9 12-5.500-2.500-9-6.500-9-12v-6z" fill="#dff3f7" opacity=".35"/>
-            <path d="M14.500 12.500h5v4h4v5h-4v4h-5v-4h-4v-5h4z" fill="#fff"/>
+            <defs>
+              <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#2fb4c9" />
+                <stop offset="1" stop-color="#2b4fb8" />
+              </linearGradient>
+            </defs>
+            <path d="M17 1.5 31 6.5v11c0 9-6 15.5-14 19C9 33 3 26.500 3 17.500v-11z" fill="url(#sg)" stroke="#223c93"
+              stroke-width="2" />
+            <path d="M17 8.500 26 12v6c0 5.500-3.500 9.500-9 12-5.500-2.500-9-6.500-9-12v-6z" fill="#dff3f7"
+              opacity=".35" />
+            <path d="M14.500 12.500h5v4h4v5h-4v4h-5v-4h-4v-5h4z" fill="#fff" />
           </svg>
         </div>
       </header>
 
       <div class="hero-copy">
         <h1 data-i18n="home.title">A Great Place Care for yourself</h1>
-        <p class="lead" data-i18n="home.lead">Our public medical facility is deeply committed to delivering accessible, safe, and professional healthcare solutions straight to your community.</p>
-        <a class="book" href="appointments.html?book=1" data-i18n="home.book">BOOK APPOINTMENT</a>
+        <p class="lead" data-i18n="home.lead">Our public medical facility is deeply committed to delivering accessible,
+          safe, and professional healthcare solutions straight to your community.</p>
+        <a class="book" href="booking.html?book=1" data-i18n="home.book">BOOK APPOINTMENT</a>
       </div>
 
       <div class="hero-stats">
-        <div class="rating"><strong data-i18n="home.rating">4.9/5 Ratings</strong><span class="stars" aria-hidden="true">★★★★★</span></div>
+        <div class="rating"><strong data-i18n="home.rating">4.9/5 Ratings</strong><span class="stars"
+            aria-hidden="true">★★★★★</span></div>
         <div class="hours">
-          <svg viewBox="0 0 32 32" fill="none" stroke="#14213d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="16" cy="16" r="13"/><path d="M16 8v8l5 3"/></svg>
+          <svg viewBox="0 0 32 32" fill="none" stroke="#14213d" stroke-width="2" stroke-linecap="round"
+            aria-hidden="true">
+            <circle cx="16" cy="16" r="13" />
+            <path d="M16 8v8l5 3" />
+          </svg>
           <span><b data-i18n="home.days">Mon - Sun</b>8:00AM - 4:00PM</span>
         </div>
         <span class="vline" aria-hidden="true"></span>
         <div class="experts">
-          <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="10" r="6" fill="#14213d"/><path d="M4 29c0-7 5-11 12-11s12 4 12 11z" fill="#14213d"/><path d="M12 19l4 5 4-5z" fill="#fff"/></svg>
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="10" r="6" fill="#14213d" />
+            <path d="M4 29c0-7 5-11 12-11s12 4 12 11z" fill="#14213d" />
+            <path d="M12 19l4 5 4-5z" fill="#fff" />
+          </svg>
           <span data-i18n="home.experts">Trusted Expert Doctors</span>
         </div>
       </div>
@@ -220,14 +756,49 @@ a { color: inherit; }
     <section class="services" aria-labelledby="svcTitle">
       <h2 id="svcTitle" data-i18n="home.services">OUR SERVICES</h2>
       <ul class="svc-bar">
-        <li><a href="appointments.html?book=1&amp;spec=OB%20GYN"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.500" r="4.500"/><path d="M12 13v8M8.500 17.500h7"/></svg></span><span class="svc-name" data-i18n="svc.ob">OBSTETRICS &amp; GYNECOLOGY</span></a></li>
-        <li><a href="appointments.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="3.500"/><path d="M5 21c0-4.500 3-7 7-7s7 2.500 7 7zM12 15v3M10.500 16.500h3"/></svg></span><span class="svc-name" data-i18n="svc.im">INTERNAL MEDICINE</span></a></li>
-        <li><a href="appointments.html?book=1&amp;spec=PEDIATRICS"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16.500" cy="11" r="2"/><path d="M3 20c0-3.500 2.200-5.500 5-5.500s5 2 5 5.500zM13.500 20c0-2 1.300-3.500 3-3.500s3 1.500 3 3.500z"/></svg></span><span class="svc-name" data-i18n="svc.ped">PEDIATRICS</span></a></li>
-        <li><a href="appointments.html?book=1&amp;spec=GENERAL%20MEDICINE"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M8 9.500h8M5 21c0-4 3-6 7-6s7 2 7 6z"/></svg></span><span class="svc-name" data-i18n="svc.surg">GENERAL SURGERY</span></a></li>
-        <li><a href="appointments.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.500c-2.200 0-3.500 2-3.500 4.200 0 3 1.800 4 2.300 7 .3 2 .6 5.500 1.800 5.500 1.300 0 1.200-4 2.700-4s1.400 4 2.700 4c1.200 0 1.500-3.500 1.800-5.500.5-3 2.300-4 2.300-7C17 5.500 15.700 3.500 13.500 3.500c-1.300 0-2 .8-3.250.8S8.300 3.500 7 3.500z" transform="translate(1.500 0)"/></svg></span><span class="svc-name" data-i18n="svc.dental">DENTAL</span></a></li>
-        <li><a href="appointments.html?book=1&amp;spec=CARDIOLOGY"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.500s-8-4.800-8-10.500A4.500 4.500 0 0 1 12 7.500 4.500 4.500 0 0 1 20 10c0 5.700-8 10.500-8 10.500zM12 10v5M9.500 12.500h5"/></svg></span><span class="svc-name" data-i18n="svc.sub">SUBSPEC</span></a></li>
-        <li><a href="appointments.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2.500" width="8" height="10" rx="3.500"/><path d="M12 12.500v4M9 21c0-2.500 1.300-4.500 3-4.500s3 2 3 4.500z"/></svg></span><span class="svc-name" data-i18n="svc.ultra">ULTRASOUND</span></a></li>
-        <li><a href="appointments.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="svc-name" data-i18n="svc.other">OTHER SERVICES</span></a></li>
+        <li><a href="booking.html?book=1&amp;spec=OB%20GYN"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none"
+                stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8.500" r="4.500" />
+                <path d="M12 13v8M8.500 17.500h7" />
+              </svg></span><span class="svc-name" data-i18n="svc.ob">OBSTETRICS &amp; GYNECOLOGY</span></a></li>
+        <li><a href="booking.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="7" r="3.500" />
+                <path d="M5 21c0-4.500 3-7 7-7s7 2.500 7 7zM12 15v3M10.500 16.500h3" />
+              </svg></span><span class="svc-name" data-i18n="svc.im">INTERNAL MEDICINE</span></a></li>
+        <li><a href="booking.html?book=1&amp;spec=PEDIATRICS"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none"
+                stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="8" cy="8" r="3" />
+                <circle cx="16.500" cy="11" r="2" />
+                <path
+                  d="M3 20c0-3.500 2.200-5.500 5-5.500s5 2 5 5.500zM13.500 20c0-2 1.300-3.500 3-3.500s3 1.500 3 3.500z" />
+              </svg></span><span class="svc-name" data-i18n="svc.ped">PEDIATRICS</span></a></li>
+        <li><a href="booking.html?book=1&amp;spec=GENERAL%20MEDICINE"><span class="svc-ico"><svg viewBox="0 0 24 24"
+                fill="none" stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M8 9.500h8M5 21c0-4 3-6 7-6s7 2 7 6z" />
+              </svg></span><span class="svc-name" data-i18n="svc.surg">GENERAL SURGERY</span></a></li>
+        <li><a href="booking.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path
+                  d="M7 3.500c-2.200 0-3.500 2-3.500 4.200 0 3 1.800 4 2.300 7 .3 2 .6 5.500 1.800 5.500 1.300 0 1.200-4 2.700-4s1.400 4 2.700 4c1.200 0 1.500-3.500 1.800-5.500.5-3 2.300-4 2.300-7C17 5.500 15.700 3.500 13.500 3.500c-1.300 0-2 .8-3.250.8S8.300 3.500 7 3.500z"
+                  transform="translate(1.500 0)" />
+              </svg></span><span class="svc-name" data-i18n="svc.dental">DENTAL</span></a></li>
+        <li><a href="booking.html?book=1&amp;spec=CARDIOLOGY"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none"
+                stroke="#1d3f8f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path
+                  d="M12 20.500s-8-4.800-8-10.500A4.500 4.500 0 0 1 12 7.500 4.500 4.500 0 0 1 20 10c0 5.700-8 10.500-8 10.500zM12 10v5M9.500 12.500h5" />
+              </svg></span><span class="svc-name" data-i18n="svc.sub">SUBSPEC</span></a></li>
+        <li><a href="booking.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="8" y="2.500" width="8" height="10" rx="3.500" />
+                <path d="M12 12.500v4M9 21c0-2.500 1.300-4.500 3-4.500s3 2 3 4.500z" />
+              </svg></span><span class="svc-name" data-i18n="svc.ultra">ULTRASOUND</span></a></li>
+        <li><a href="booking.html?book=1"><span class="svc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1d3f8f"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg></span><span class="svc-name" data-i18n="svc.other">OTHER SERVICES</span></a></li>
       </ul>
     </section>
 
@@ -235,20 +806,42 @@ a { color: inherit; }
     <section class="info">
       <article class="about">
         <h2 data-i18n="home.about">ABOUT US</h2>
-        <p data-i18n="home.about1">Medic Care, your trusted partner in healthcare. We are dedicated to making healthcare services more accessible, convenient, and organized for everyone. Our website allows patients to explore medical services and book appointments easily, helping them save time and manage their healthcare needs more efficiently.</p>
-        <p data-i18n="home.about2">At Medic Care, we believe that quality healthcare starts with easy access to medical services. Our goal is to provide a simple, user-friendly, and reliable platform that connects patients with the healthcare services they need.</p>
-        <p data-i18n="home.about3">Your health matters to us. With Medic Care, caring for your health is just a few clicks away.</p>
+        <p data-i18n="home.about1">Medic Care, your trusted partner in healthcare. We are dedicated to making healthcare
+          services more accessible, convenient, and organized for everyone. Our website allows patients to explore
+          medical services and book appointments easily, helping them save time and manage their healthcare needs more
+          efficiently.</p>
+        <p data-i18n="home.about2">At Medic Care, we believe that quality healthcare starts with easy access to medical
+          services. Our goal is to provide a simple, user-friendly, and reliable platform that connects patients with
+          the healthcare services they need.</p>
+        <p data-i18n="home.about3">Your health matters to us. With Medic Care, caring for your health is just a few
+          clicks away.</p>
       </article>
 
       <aside class="contact" aria-labelledby="contactTitle">
         <h2 id="contactTitle" data-i18n="home.contact">CONTACT US</h2>
         <ul>
-          <li><span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.500 1.500a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span>
-              <span><a href="tel:0756538888">(075) 653-8888</a> <span data-i18n="home.or">or</span> <a href="tel:0756538000">(075) 653-8000</a></span></li>
-          <li><span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.500" width="10" height="19" rx="2"/><path d="M11 18.500h2"/></svg></span>
-              <span><a href="tel:09686658037">09686658037</a> / <a href="tel:09943529308">09943529308</a></span></li>
-          <li><span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.500 7 8.500 6.500L20.500 7"/></svg></span>
-              <span><a href="mailto:mediccare@gmail.com">mediccare@gmail.com</a></span></li>
+          <li><span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path
+                  d="M5 4h4l2 5-2.500 1.500a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
+              </svg></span>
+            <span><a href="tel:0756538888">(075) 653-8888</a> <span data-i18n="home.or">or</span> <a
+                href="tel:0756538000">(075) 653-8000</a></span>
+          </li>
+          <li><span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="7" y="2.500" width="10" height="19" rx="2" />
+                <path d="M11 18.500h2" />
+              </svg></span>
+            <span><a href="tel:09686658037">09686658037</a> / <a href="tel:09943529308">09943529308</a></span>
+          </li>
+          <li><span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="m3.500 7 8.500 6.500L20.500 7" />
+              </svg></span>
+            <span><a href="mailto:mediccare@gmail.com">mediccare@gmail.com</a></span>
+          </li>
         </ul>
       </aside>
     </section>
@@ -256,14 +849,15 @@ a { color: inherit; }
 
   <script src="languages.js"></script>
   <script>
-/* MEDIC CARE – Homepage */
+    /* MEDIC CARE – Homepage */
 
-// Sidebar (menu, search, account info, logout) lives in auth.js so every page shares it
-if (window.Auth && typeof Auth.initSidebar === "function") {
-  Auth.initSidebar();
-} else {
-  console.error("auth.js did not load, or it is missing Auth.initSidebar().");
-}
+    // Sidebar (menu, search, account info, logout) lives in auth.js so every page shares it
+    if (window.Auth && typeof Auth.initSidebar === "function") {
+      Auth.initSidebar();
+    } else {
+      console.error("auth.js did not load, or it is missing Auth.initSidebar().");
+    }
   </script>
 </body>
+
 </html>

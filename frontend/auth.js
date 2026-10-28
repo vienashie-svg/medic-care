@@ -9,6 +9,10 @@
 
     // The pages consume each result immediately after the request.
     function call(method, path, body) {
+        if (window.location.protocol === "file:") {
+            return { status: 0, data: { ok: false, error: "server_required" }, json: false };
+        }
+
         try {
             const xhr = new XMLHttpRequest();
             xhr.open(method, API + path, false);
@@ -22,9 +26,13 @@
                 console.error("Server error (" + xhr.status + "):", data.error || xhr.responseText);
             }
 
-            return { status: xhr.status, data: data };
+            return {
+                status: xhr.status,
+                data: data,
+                json: (xhr.getResponseHeader("Content-Type") || "").includes("application/json")
+            };
         } catch (e) {
-            return { status: 0, data: { ok: false, error: "network" } };
+            return { status: 0, data: { ok: false, error: "network" }, json: false };
         }
     }
 
@@ -36,7 +44,43 @@
         return cache;
     }
 
-    refresh();
+    function refreshGuestSession() {
+        if (window.location.protocol === "file:") {
+            return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", API + "/me", true);
+        xhr.onload = function () {
+            let data = {};
+            try {
+                data = JSON.parse(xhr.responseText || "{}");
+            } catch (e) {
+                console.error("Could not check the current login session: invalid server response.");
+                return;
+            }
+
+            if (xhr.status >= 500) {
+                console.error("Could not check the current login session (server error " + xhr.status + ").");
+                return;
+            }
+
+            cache = xhr.status === 200 && data.user ? data.user : null;
+            if (cache && document.documentElement.hasAttribute("data-guest-only")) {
+                location.replace(HOME);
+            }
+        };
+        xhr.onerror = function () {
+            console.error("Could not reach the server to check the current login session.");
+        };
+        xhr.send();
+    }
+
+    if (document.documentElement.hasAttribute("data-guest-only")) {
+        refreshGuestSession();
+    } else {
+        refresh();
+    }
 
     function normalize(raw) {
         let s = String(raw || "").trim();
@@ -110,7 +154,9 @@
 
         return {
             ok: false,
-            error: (r.data && r.data.error) || (r.status === 0 ? "network" : "error")
+            error: (r.data && r.data.error) ||
+                (r.status === 0 ? "network" :
+                    !r.json ? "server_required" : "error")
         };
     }
 
@@ -123,7 +169,9 @@
 
         return {
             ok: false,
-            reason: (r.data && r.data.reason) || (r.status === 0 ? "network" : "bad")
+            reason: (r.data && (r.data.reason || r.data.error)) ||
+                (r.status === 0 ? "network" :
+                    !r.json ? "server_required" : "error")
         };
     }
 
@@ -136,9 +184,15 @@
 
         if (r.data && r.data.ok) {
             refresh();
+            return { ok: true };
         }
 
-        return !!(r.data && r.data.ok);
+        return {
+            ok: false,
+            reason: (r.data && (r.data.reason || r.data.error)) ||
+                (r.status === 0 ? "network" :
+                    !r.json ? "server_required" : "error")
+        };
     }
 
     function logout() {
