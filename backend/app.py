@@ -1,19 +1,4 @@
-"""
-MEDIC CARE backend  (Flask + Firebase Firestore)
-
-Serves the website files and the JSON API that auth.js talks to under /api.
-All data lives in Firestore, one document per account:
-
-    users/{sha256(login id)} = {
-        id:            "name@email.com" or "09123456789"   (normalized login id)
-        password_hash: "...",                               (never sent to the browser)
-        profile:       {name, email, phone, code, photo},
-        data:          {appointments: [...], profileExtra: {...}},
-        created_at:    1730000000.0
-    }
-
-Only this server talks to Firestore (Firebase Admin SDK), so the Firestore
-rules can deny every direct browser access (see firestore.rules).
+""" MEDIC CARE backend  (Flask + Firebase Firestore)
 
 Run locally:   python app.py
 Production:    gunicorn app:app        (set SECRET_KEY and SESSION_COOKIE_SECURE=1)
@@ -30,8 +15,8 @@ import time
 from datetime import timedelta
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, request, send_from_directory, session
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask import Flask, abort, jsonify, request, send_from_directory, session  # type: ignore[reportMissingImports]
+from werkzeug.security import check_password_hash, generate_password_hash # type: ignore
 
 try:                                    # optional: read settings from backend/.env
     from dotenv import load_dotenv # type: ignore
@@ -62,7 +47,6 @@ STATIC_EXTENSIONS = {
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
 PHONE_RE = re.compile(r"^\+?\d{7,15}$")
-PHOTO_RE = re.compile(r"^data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$")
 
 
 def env_flag(name, default=False):
@@ -107,27 +91,29 @@ class MemoryStore:
 
 
 class FirestoreStore:
-    """Firebase Firestore through the Firebase Admin SDK."""
-
     def __init__(self):
-        import firebase_admin # pyright: ignore[reportMissingImports]
+        import firebase_admin
         from firebase_admin import credentials, firestore
         from google.api_core import exceptions
 
-        self._exceptions = exceptions
+        render_secret_path = "/opt/render/project/src/backend/firebase-key.json"
+        local_secret_path = BASE_DIR / "firebase-key.json"
+
+        if os.path.exists(render_secret_path):
+            cred = credentials.Certificate(render_secret_path)
+        elif local_secret_path.exists():
+            cred = credentials.Certificate(str(local_secret_path))
+        else:
+            raise FileNotFoundError("Hindi mahanap ang firebase-key.json file!")
 
         if not firebase_admin._apps:
-            key_path = os.getenv("FIREBASE_CREDENTIALS")          # path to the service-account .json
-            if key_path:
-                cred = credentials.Certificate(key_path)
-            else:                                                 # e.g. GOOGLE_APPLICATION_CREDENTIALS
-                cred = credentials.ApplicationDefault()
             firebase_admin.initialize_app(cred)
 
         self._col = firestore.client().collection(USERS_COLLECTION)
+        self._exceptions = exceptions
 
     def get(self, uid):
-        snap = self._col.document(uid).get()
+        snap = self._col.document(uid).get()  # pyright: ignore[reportUnknownMemberType]
         return snap.to_dict() if snap.exists else None
 
     def create(self, uid, doc):
@@ -176,7 +162,7 @@ app.config.update(
 )
 
 if env_flag("TRUST_PROXY"):                                    # behind nginx / a hosting proxy
-    from werkzeug.middleware.proxy_fix import ProxyFix
+    from werkzeug.middleware.proxy_fix import ProxyFix # type: ignore
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 
@@ -244,7 +230,6 @@ def clean_profile(profile):
         "email": p.get("email", ""),
         "phone": p.get("phone", ""),
         "code": p.get("code", "+63"),
-        "photo": p.get("photo", ""),
     }
 
 
@@ -298,19 +283,19 @@ def add_headers(resp):
 
 
 @app.errorhandler(404)
-def not_found(_e):
+def not_found(_):
     if request.path.startswith("/api/"):
         return fail("not_found", 404)
     return "Not found", 404
 
 
 @app.errorhandler(413)
-def too_large(_e):
+def too_large(_):
     return fail("too_large", 413)
 
 
 @app.errorhandler(500)
-def server_error(_e):
+def server_error(_):
     return fail("server_error", 500)
 
 
@@ -357,7 +342,6 @@ def signup():
             "email": login_id if is_email else "",
             "phone": "" if is_email else login_id,
             "code": "+63",
-            "photo": "",
         },
         "data": {},
         "created_at": time.time(),
@@ -456,12 +440,6 @@ def validate_profile_patch(patch):
         if not re.fullmatch(r"\+?\d{1,4}", code):
             return None, "invalid_code"
         out["code"] = code
-
-    if "photo" in patch:
-        photo = patch["photo"] or ""
-        if photo and (not isinstance(photo, str) or len(photo) > MAX_PHOTO_CHARS or not PHOTO_RE.match(photo)):
-            return None, "invalid_photo"
-        out["photo"] = photo
 
     return out, None
 
@@ -565,7 +543,7 @@ def forgot_password():
         import smtplib
         import ssl
         from email.message import EmailMessage
-        from firebase_admin import auth
+        from firebase_admin import auth # type: ignore
 
         data = body()
         email = data.get("email")
