@@ -750,7 +750,10 @@ def reset_password():
 
 @app.get("/")
 def home():
+    if "uid" not in session:
+        return send_from_directory(FRONTEND_DIR, "login.html")
     return send_from_directory(FRONTEND_DIR, "index.html")
+
 
 @app.get("/path:filename")
 def site_file(filename):
