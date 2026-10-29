@@ -1,9 +1,3 @@
-""" MEDIC CARE backend  (Flask + Firebase Firestore)
-
-Run locally:   python app.py
-Production:    gunicorn app:app        (set SECRET_KEY and SESSION_COOKIE_SECURE=1)
-"""
-
 import copy
 import hashlib
 import json
@@ -15,15 +9,15 @@ import time
 from datetime import timedelta
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, request, send_from_directory, session  # type: ignore[reportMissingImports]
-from werkzeug.security import check_password_hash, generate_password_hash # type: ignore
+from flask import Flask, abort, jsonify, request, send_from_directory, session 
+from werkzeug.security import check_password_hash, generate_password_hash 
+import requests
 
-try:                                    # optional: read settings from backend/.env
-    from dotenv import load_dotenv # type: ignore
+try:                                    
+    from dotenv import load_dotenv 
     load_dotenv(Path(__file__).resolve().parent / ".env")
 except ImportError:
     pass
-
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = Path(os.getenv("FRONTEND_DIR", BASE_DIR.parent / "frontend")).resolve()
@@ -36,15 +30,13 @@ CHALLENGES_COLLECTION = "login_challenges"
 LOGIN_LINK_MINUTES = 10
 
 SESSION_DAYS = 7
-VERIFY_WINDOW = 300          # seconds a successful password check stays valid for login / password change
-MAX_PHOTO_CHARS = 600_000    # Firestore documents are limited to 1 MiB
-MAX_DATA_BYTES = 300_000     # per saved data key
+VERIFY_WINDOW = 300          
+MAX_PHOTO_CHARS = 600_000    
+MAX_DATA_BYTES = 300_000     
 MAX_APPOINTMENTS = 500
 
-# Keys the website may save with Auth.setData(key, value), and the type each must be.
 ALLOWED_DATA = {"appointments": list, "profileExtra": dict}
 
-# Only these file types are ever served as website files.
 STATIC_EXTENSIONS = {
     ".html", ".js", ".css", ".png", ".jpg", ".jpeg", ".gif",
     ".svg", ".webp", ".ico", ".woff", ".woff2",
@@ -52,20 +44,18 @@ STATIC_EXTENSIONS = {
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
 
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "AIzaSyDnpYP-ZIBrNZ5RQMXJUPswIQjFhu-RMjk")
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "medic-care-10")
 
 def env_flag(name, default=False):
     return os.getenv(name, "1" if default else "0").strip().lower() in ("1", "true", "yes", "on")
 
-
 class DatabaseUnavailable(Exception):
-    """The account database could not complete a request."""
-
+    pass
 
 class MemoryStore:
-    """Throw-away store for local testing. Set USE_MEMORY_DB=1. Data is lost on restart."""
-
     def __init__(self):
-        self._docs = {}                      # (collection, id) -> dict
+        self._docs = {}                      
         self._lock = threading.Lock()
 
     def get_doc(self, col, uid):
@@ -85,7 +75,7 @@ class MemoryStore:
             doc = self._docs.get((col, uid))
             if doc is None:
                 return False
-            for path, value in fields.items():           # supports "data.appointments"
+            for path, value in fields.items():           
                 target = doc
                 *parents, last = path.split(".")
                 for part in parents:
@@ -97,102 +87,105 @@ class MemoryStore:
         with self._lock:
             self._docs.pop((col, uid), None)
 
-
 class FirestoreStore:
-    """Firebase Firestore, accessed only from this server with the Admin SDK."""
-
     def __init__(self):
-        import firebase_admin
-        from firebase_admin import credentials, firestore
-        from google.api_core import exceptions
+        self._base_url = f"https://googleapis.com{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 
-        if not firebase_admin._apps:
-            firebase_admin.initialize_app(load_firebase_credentials(credentials))
+    def _to_firestore_value(self, val):
+        if isinstance(val, dict):
+            return {"mapValue": {"fields": {k: self._to_firestore_value(v) for k, v in val.items()}}}
+        elif isinstance(val, list):
+            return {"arrayValue": {"values": [self._to_firestore_value(v) for v in val]}}
+        elif isinstance(val, (int, float)):
+            return {"doubleValue": float(val)}
+        elif isinstance(val, bool):
+            return {"booleanValue": val}
+        else:
+            return {"stringValue": str(val)}
 
-        self._db = firestore.client()
-        self._exceptions = exceptions
-
-    def _ref(self, col, uid):
-        return self._db.collection(col).document(uid)
+    def _from_firestore_value(self, f_val):
+        if not isinstance(f_val, dict) or not f_val:
+            return f_val
+        k = list(f_val.keys())[0]
+        v = f_val[k]
+        if k == "mapValue":
+            return {fields_k: self._from_firestore_value(fields_v) for fields_k, fields_v in v.get("fields", {}).items()}
+        elif k == "arrayValue":
+            return [self._from_firestore_value(i) for i in v.get("values", [])]
+        elif k in ("doubleValue", "integerValue"):
+            return float(v) if k == "doubleValue" else int(v)
+        elif k == "booleanValue":
+            return bool(v)
+        elif k == "stringValue":
+            return str(v)
+        return v
 
     def get_doc(self, col, uid):
+        url = f"{self._base_url}/{col}/{uid}"
         try:
-            snap = self._ref(col, uid).get()
-            return snap.to_dict() if snap.exists else None
-        except self._exceptions.GoogleAPICallError as error:
-            raise DatabaseUnavailable from error
+            res = requests.get(url, timeout=10)
+            if res.status_code == 200:
+                fields = res.json().get("fields", {})
+                return {k: self._from_firestore_value(v) for k, v in fields.items()}
+            elif res.status_code == 404:
+                return None
+            raise DatabaseUnavailable
+        except Exception as e:
+            raise DatabaseUnavailable from e
 
     def create_doc(self, col, uid, doc):
-        try:
-            self._ref(col, uid).create(doc)               # fails if it already exists
-            return True
-        except self._exceptions.AlreadyExists:
+        url = f"{self._base_url}/{col}?documentId={uid}"
+        if self.get_doc(col, uid) is not None:
             return False
-        except self._exceptions.GoogleAPICallError as error:
-            raise DatabaseUnavailable from error
+        payload = {"fields": {k: self._to_firestore_value(v) for k, v in doc.items()}}
+        try:
+            res = requests.post(url, json=payload, timeout=10)
+            if res.status_code == 200:
+                return True
+            raise DatabaseUnavailable
+        except Exception as e:
+            raise DatabaseUnavailable from e
 
     def update_doc(self, col, uid, fields):
-        try:
-            self._ref(col, uid).update(fields)
-            return True
-        except self._exceptions.NotFound:
+        current = self.get_doc(col, uid)
+        if current is None:
             return False
-        except self._exceptions.GoogleAPICallError as error:
-            raise DatabaseUnavailable from error
+        for path, value in fields.items():
+            target = current
+            *parents, last = path.split(".")
+            for part in parents:
+                target = target.setdefault(part, {})
+            target[last] = value
+        url = f"{self._base_url}/{col}/{uid}"
+        payload = {"fields": {k: self._to_firestore_value(v) for k, v in current.items()}}
+        try:
+            res = requests.patch(url, json=payload, timeout=10)
+            return res.status_code == 200
+        except Exception as e:
+            raise DatabaseUnavailable from e
 
     def delete_doc(self, col, uid):
+        url = f"{self._base_url}/{col}/{uid}"
         try:
-            self._ref(col, uid).delete()
-        except self._exceptions.GoogleAPICallError as error:
-            raise DatabaseUnavailable from error
-
-
-def load_firebase_credentials(credentials):
-    """Where the service-account key comes from, in order of preference:
-
-    1. FIREBASE_CREDENTIALS_JSON    the whole JSON as one environment variable (best for hosting)
-    2. GOOGLE_APPLICATION_CREDENTIALS / FIREBASE_KEY_PATH   path to the JSON file
-    3. backend/firebase-key.json    local development only - never commit this file
-    """
-    raw = os.getenv("FIREBASE_CREDENTIALS_JSON")
-    if raw:
-        return credentials.Certificate(json.loads(raw))
-
-    for candidate in (
-        os.getenv("FIREBASE_KEY_PATH"),
-        os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
-        "/etc/secrets/firebase-key.json",                   # Render secret file
-        BASE_DIR / "firebase-key.json",
-    ):
-        if candidate and Path(candidate).exists():
-            return credentials.Certificate(str(candidate))
-
-    raise FileNotFoundError(
-        "Firebase credentials not found. Set FIREBASE_CREDENTIALS_JSON, or put the "
-        "service-account key at backend/firebase-key.json (or set FIREBASE_KEY_PATH)."
-    )
-
+            requests.delete(url, timeout=10)
+        except Exception as e:
+            raise DatabaseUnavailable from e
 
 class Store:
-    """Thin wrapper so the routes never touch a database client directly."""
-
     def __init__(self, backend):
         self._b = backend
 
-    # accounts
     def get(self, uid):                return self._b.get_doc(USERS_COLLECTION, uid)
     def create(self, uid, doc):        return self._b.create_doc(USERS_COLLECTION, uid, doc)
     def update(self, uid, fields):     return self._b.update_doc(USERS_COLLECTION, uid, fields)
     def delete(self, uid):             self._b.delete_doc(USERS_COLLECTION, uid)
 
-    # password-reset tokens (only a hash of the token is ever stored)
     def get_reset(self, token_hash):   return self._b.get_doc(RESETS_COLLECTION, token_hash)
     def put_reset(self, token_hash, doc):
         self._b.delete_doc(RESETS_COLLECTION, token_hash)
         self._b.create_doc(RESETS_COLLECTION, token_hash, doc)
     def delete_reset(self, token_hash): self._b.delete_doc(RESETS_COLLECTION, token_hash)
 
-    # e-mail confirmation of a login (only a hash of the emailed token is stored)
     def get_challenge(self, th):           return self._b.get_doc(CHALLENGES_COLLECTION, th)
     def put_challenge(self, th, doc):
         self._b.delete_doc(CHALLENGES_COLLECTION, th)
@@ -200,7 +193,6 @@ class Store:
     def confirm_challenge(self, th):       return self._b.update_doc(CHALLENGES_COLLECTION, th, {"confirmed": True})
     def delete_challenge(self, th):        self._b.delete_doc(CHALLENGES_COLLECTION, th)
 
-    # appointment slots: one document per doctor + date + time, so two patients can't book the same slot
     def claim_slot(self, key, uid):
         if self._b.create_doc(SLOTS_COLLECTION, key, {"uid": uid, "t": time.time()}):
             return True
@@ -212,47 +204,38 @@ class Store:
         if existing and existing.get("uid") == uid:
             self._b.delete_doc(SLOTS_COLLECTION, key)
 
-
 def make_store():
     if env_flag("USE_MEMORY_DB"):
-        print("WARNING: USE_MEMORY_DB=1 - using a temporary in-memory database, NOT Firebase.")
         return Store(MemoryStore())
     return Store(FirestoreStore())
 
-
 store = make_store()
-
 
 app = Flask(__name__, static_folder=None)
 
 secret = os.getenv("SECRET_KEY")
 if not secret:
     secret = secrets.token_hex(32)
-    print("WARNING: SECRET_KEY is not set. Using a random key, so everyone is logged out on restart.")
 
 app.config.update(
     SECRET_KEY=secret,
     SESSION_COOKIE_NAME="medic_care_session",
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=env_flag("SESSION_COOKIE_SECURE"),   # set to 1 when served over HTTPS
+    SESSION_COOKIE_SECURE=env_flag("SESSION_COOKIE_SECURE"),   
     PERMANENT_SESSION_LIFETIME=timedelta(days=SESSION_DAYS),
     MAX_CONTENT_LENGTH=2 * 1024 * 1024,
 )
 
-if env_flag("TRUST_PROXY"):                                    # behind nginx / a hosting proxy
-    from werkzeug.middleware.proxy_fix import ProxyFix # type: ignore
+if env_flag("TRUST_PROXY"):                                    
+    from werkzeug.middleware.proxy_fix import ProxyFix 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-
 def normalize(raw):
-    """Same rules as Auth.normalize() in auth.js: accounts are identified by e-mail address."""
     return str(raw or "").strip().lower()
-
 
 def valid_id(login_id):
     return len(login_id) <= 254 and bool(EMAIL_RE.match(login_id))
-
 
 def valid_password(pw):
     return (
@@ -262,16 +245,12 @@ def valid_password(pw):
         and re.search(r"\d", pw) is not None
     )
 
-
 def uid_for(login_id):
-    """Firestore document id for a login id (emails contain characters that are awkward in ids)."""
     return hashlib.sha256(login_id.encode("utf-8")).hexdigest()
-
 
 def body():
     data = request.get_json(silent=True)
     return data if isinstance(data, dict) else {}
-
 
 def fail(error=None, status=400, **extra):
     payload = {"ok": False}
@@ -280,9 +259,7 @@ def fail(error=None, status=400, **extra):
     payload.update(extra)
     return jsonify(payload), status
 
-
 def current_user():
-    """(uid, document) for the signed-in account, or None."""
     uid = session.get("uid")
     if not uid:
         return None
@@ -292,9 +269,7 @@ def current_user():
         return None
     return uid, doc
 
-
 def clean_profile(profile):
-    """Fields of the account profile that are safe to send to the browser."""
     p = profile if isinstance(profile, dict) else {}
     return {
         "name": p.get("name", ""),
@@ -303,10 +278,7 @@ def clean_profile(profile):
         "code": p.get("code", "+63"),
     }
 
-
 class RateLimiter:
-    """Small in-memory limiter. Use Redis instead if you run several server processes."""
-
     def __init__(self, limit, window):
         self.limit, self.window = limit, window
         self._hits = {}
@@ -315,7 +287,10 @@ class RateLimiter:
     def _recent(self, key):
         now = time.time()
         hits = [t for t in self._hits.get(key, []) if now - t < self.window]
-        self._hits[key] = hits
+        if hits:
+            self._hits[key] = hits
+        else:
+            self._hits.pop(key, None)
         return hits
 
     def blocked(self, key):
@@ -324,27 +299,25 @@ class RateLimiter:
 
     def hit(self, key):
         with self._lock:
-            self._recent(key).append(time.time())
+            hits = self._recent(key)
+            hits.append(time.time())
+            self._hits[key] = hits
 
     def reset(self, key):
         with self._lock:
             self._hits.pop(key, None)
 
-
-login_mail_limiter = RateLimiter(limit=5, window=3600)  # confirmation e-mails per account
-login_limiter = RateLimiter(limit=5, window=300)      # wrong passwords per IP + account
-signup_limiter = RateLimiter(limit=20, window=3600)   # sign-ups per IP
-reset_limiter = RateLimiter(limit=5, window=3600)     # reset e-mails per IP
-reset_try_limiter = RateLimiter(limit=10, window=600) # reset-token attempts per IP
-
+login_mail_limiter = RateLimiter(limit=5, window=3600)
+login_limiter = RateLimiter(limit=5, window=300)
+signup_limiter = RateLimiter(limit=20, window=3600)
+reset_limiter = RateLimiter(limit=5, window=3600)
+reset_try_limiter = RateLimiter(limit=10, window=600)
 
 @app.before_request
 def require_json_for_changes():
-    """Every changing request must be JSON. Together with SameSite cookies this blocks cross-site forms (CSRF)."""
     if request.path.startswith("/api/") and request.method not in ("GET", "HEAD", "OPTIONS"):
         if not request.is_json:
             return fail("json_required", 415)
-
 
 @app.after_request
 def add_headers(resp):
@@ -355,34 +328,27 @@ def add_headers(resp):
         resp.headers["Cache-Control"] = "no-store"
     return resp
 
-
 @app.errorhandler(404)
 def not_found(_):
     if request.path.startswith("/api/"):
         return fail("not_found", 404)
     return "Not found", 404
 
-
 @app.errorhandler(413)
 def too_large(_):
     return fail("too_large", 413)
-
 
 @app.errorhandler(500)
 def server_error(_):
     return fail("server_error", 500)
 
-
 @app.errorhandler(DatabaseUnavailable)
 def database_down(error):
-    app.logger.error("Firestore request failed: %s", error.__cause__ or error)
     return fail("database_unavailable", 503)
-
 
 @app.get("/api/health")
 def health():
     return jsonify(ok=True)
-
 
 @app.get("/api/me")
 def me():
@@ -396,28 +362,23 @@ def me():
         "data": doc.get("data", {}),
     })
 
-
 @app.post("/api/signup")
 def signup():
     ip = request.remote_addr or "?"
     if signup_limiter.blocked(ip):
         return fail("too_many", 429)
-
     data = body()
     login_id = normalize(data.get("id"))
     password = data.get("password")
     profile = data.get("profile") if isinstance(data.get("profile"), dict) else {}
     name = str(profile.get("name", "")).strip()
-
     if not name or len(name) > 200:
         return fail("invalid_name")
     if not valid_id(login_id):
         return fail("invalid_id")
     if not valid_password(password):
         return fail("weak_password")
-
     signup_limiter.hit(ip)
-
     doc = {
         "id": login_id,
         "password_hash": generate_password_hash(password),
@@ -430,49 +391,35 @@ def signup():
         "data": {},
         "created_at": time.time(),
     }
-
     try:
         created = store.create(uid_for(login_id), doc)
     except DatabaseUnavailable:
-        app.logger.exception("Account creation failed because Firestore is unavailable.")
         return fail("database_unavailable", 503)
-
     if not created:
         return fail("exists", 409)
-
     return jsonify(ok=True, id=login_id), 201
-
 
 @app.post("/api/verify")
 def verify():
-    """Step 1 of signing in: check the password. Step 2 is /api/login."""
     data = body()
     login_id = normalize(data.get("id"))
     password = data.get("password")
-
     if not login_id or not isinstance(password, str):
         return fail(reason="bad", status=400)
-
     key = f"{request.remote_addr}|{login_id}"
     if login_limiter.blocked(key):
         return fail(reason="too_many", status=429)
-
     uid = uid_for(login_id)
     doc = store.get(uid)
-
     if doc is None:
         login_limiter.hit(key)
         return fail(reason="not_found", status=404)
-
     if not check_password_hash(doc["password_hash"], password):
         login_limiter.hit(key)
         return fail(reason="bad", status=401)
-
     login_limiter.reset(key)
-
-    if "@" not in str(doc.get("id", "")):          # old phone-number test accounts can no longer sign in
+    if "@" not in str(doc.get("id", "")):
         return fail(reason="not_found", status=404)
-
     if LOGIN_EMAIL_VERIFICATION:
         th, error = issue_login_link(uid, doc["id"])
         if error:
@@ -480,23 +427,18 @@ def verify():
             return fail(error, 503 if error == "email_unavailable" else 429)
         session["verified"] = {"uid": uid, "t": time.time(), "th": th}
         return jsonify(ok=True, id=doc["id"], needs_email=True, email=mask_email(doc["id"]))
-
     session["verified"] = {"uid": uid, "t": time.time()}
     return jsonify(ok=True, id=doc["id"], needs_email=False)
 
-
 @app.post("/api/login")
 def login():
-    """Step 2: start the session. Only works right after a successful /api/verify."""
     verified = session.get("verified") or {}
     uid = verified.get("uid")
-    th = verified.get("th")                       # set when an e-mail confirmation is required
+    th = verified.get("th")
     window = LOGIN_LINK_MINUTES * 60 if th else VERIFY_WINDOW
-
     if not uid or time.time() - verified.get("t", 0) > window:
         session.pop("verified", None)
         return fail("not_verified", 401)
-
     if th:
         challenge = store.get_challenge(th)
         if not challenge or challenge.get("uid") != uid or challenge.get("exp", 0) < time.time():
@@ -504,44 +446,34 @@ def login():
             return fail("not_verified", 401)
         if not challenge.get("confirmed"):
             return fail("email_not_confirmed", 401)
-        store.delete_challenge(th)                # the link works once
-
+        store.delete_challenge(th)
     asked = normalize(body().get("id"))
     if asked and uid_for(asked) != uid:
         return fail("not_verified", 403)
-
     if store.get(uid) is None:
         session.clear()
         return fail("not_found", 404)
-
     session.clear()
     session["uid"] = uid
     session.permanent = True
     return jsonify(ok=True)
 
-
 LOGIN_EMAIL_VERIFICATION = env_flag("LOGIN_EMAIL_VERIFICATION", True)
-
 
 def mask_email(email):
     name, _, domain = email.partition("@")
     return f"{name[:1]}***@{domain}"
 
-
 def issue_login_link(uid, email):
-    """Creates a one-time confirmation link and e-mails it. Returns (token_hash, error_code)."""
     if login_mail_limiter.blocked(uid):
         return None, "too_many"
     login_mail_limiter.hit(uid)
-
     old = (session.get("verified") or {}).get("th")
     if old:
         store.delete_challenge(old)
-
     token = secrets.token_urlsafe(32)
     th = token_hash(token)
     store.put_challenge(th, {"uid": uid, "exp": time.time() + LOGIN_LINK_MINUTES * 60, "confirmed": False})
-
     base = os.getenv("PUBLIC_URL", request.host_url).rstrip("/")
     link = f"{base}/confirm-login.html?token={token}"
     try:
@@ -553,43 +485,33 @@ def issue_login_link(uid, email):
             "If this was not you, ignore this email and change your password.",
         )
     except Exception:
-        app.logger.exception("Could not send the login confirmation e-mail")
         store.delete_challenge(th)
         return None, "email_unavailable"
-
     if not sent:
         if env_flag("FLASK_DEBUG"):
-            app.logger.warning("SMTP not configured - login link for %s: %s", email, link)
-        else:
-            store.delete_challenge(th)
-            return None, "email_unavailable"
+            return th, None
+        store.delete_challenge(th)
+        return None, "email_unavailable"
     return th, None
-
 
 @app.post("/api/confirm-login")
 def confirm_login():
-    """Called by confirm-login.html when the user opens the e-mailed link (on any device)."""
     ip = request.remote_addr or "?"
     if reset_try_limiter.blocked(ip):
         return fail("too_many", 429)
     reset_try_limiter.hit(ip)
-
     token = body().get("token")
     if not isinstance(token, str) or not token:
         return fail("invalid_token", 400)
-
     th = token_hash(token)
     challenge = store.get_challenge(th)
     if not challenge or challenge.get("exp", 0) < time.time():
         return fail("invalid_token", 400)
-
     store.confirm_challenge(th)
     return jsonify(ok=True)
 
-
 @app.get("/api/login-status")
 def login_status():
-    """The login page polls this until the e-mailed link has been opened."""
     th = (session.get("verified") or {}).get("th")
     if not th:
         return jsonify(ok=True, confirmed=False, expired=True)
@@ -597,7 +519,6 @@ def login_status():
     if not challenge or challenge.get("exp", 0) < time.time():
         return jsonify(ok=True, confirmed=False, expired=True)
     return jsonify(ok=True, confirmed=bool(challenge.get("confirmed")), expired=False)
-
 
 @app.post("/api/login/resend")
 def login_resend():
@@ -614,43 +535,34 @@ def login_resend():
     session["verified"] = {"uid": uid, "t": time.time(), "th": th}
     return jsonify(ok=True)
 
-
 @app.post("/api/logout")
 def logout():
     session.clear()
     return jsonify(ok=True)
 
-
 def validate_profile_patch(patch):
-    """Returns (clean_fields, error_code)."""
     out = {}
-
     if "name" in patch:
         name = str(patch["name"] or "").strip()
         if not name or len(name) > 200:
             return None, "invalid_name"
         out["name"] = name
-
     if "email" in patch:
         email = str(patch["email"] or "").strip().lower()
         if email and (len(email) > 254 or not EMAIL_RE.match(email)):
             return None, "invalid_email"
         out["email"] = email
-
     if "phone" in patch:
         phone = str(patch["phone"] or "").strip()
-        if len(phone) > 30 or not re.fullmatch(r"[0-9+\-().\s]*", phone):
+        if len(phone) > 30 or not re.fullmatch(r"[0-9+-().\s]*", phone):
             return None, "invalid_phone"
         out["phone"] = phone
-
     if "code" in patch:
         code = str(patch["code"] or "").strip()
         if not re.fullmatch(r"\+?\d{1,4}", code):
             return None, "invalid_code"
         out["code"] = code
-
     return out, None
-
 
 @app.put("/api/profile")
 def save_profile():
@@ -658,15 +570,12 @@ def save_profile():
     if not found:
         return fail("unauthorized", 401)
     uid, doc = found
-
     fields, error = validate_profile_patch(body())
     if error:
         return fail(error)
-
     profile = {**clean_profile(doc.get("profile")), **fields}
     store.update(uid, {"profile": profile})
     return jsonify(ok=True, profile=profile)
-
 
 @app.post("/api/password/check")
 def password_check():
@@ -674,20 +583,16 @@ def password_check():
     if not found:
         return fail("unauthorized", 401)
     uid, doc = found
-
     password = body().get("password")
     key = f"pw|{uid}"
     if login_limiter.blocked(key):
         return fail("too_many", 429)
-
     if not isinstance(password, str) or not check_password_hash(doc["password_hash"], password):
         login_limiter.hit(key)
         return fail("bad", 401)
-
     login_limiter.reset(key)
-    session["pw_ok"] = time.time()          # allows one password change in the next few minutes
+    session["pw_ok"] = time.time()
     return jsonify(ok=True)
-
 
 @app.put("/api/password")
 def password_change():
@@ -695,18 +600,14 @@ def password_change():
     if not found:
         return fail("unauthorized", 401)
     uid, _ = found
-
     if time.time() - session.get("pw_ok", 0) > VERIFY_WINDOW:
         return fail("current_password_required", 403)
-
     password = body().get("password")
     if not valid_password(password):
         return fail("weak_password")
-
     store.update(uid, {"password_hash": generate_password_hash(password)})
     session.pop("pw_ok", None)
     return jsonify(ok=True)
-
 
 @app.delete("/api/account")
 def delete_account():
@@ -714,34 +615,27 @@ def delete_account():
     if not found:
         return fail("unauthorized", 401)
     uid, _ = found
-
     store.delete(uid)
     session.clear()
     return jsonify(ok=True)
 
-
-@app.put("/api/data/<key>")
+@app.put("/api/data/")
 def save_data(key):
     found = current_user()
     if not found:
         return fail("unauthorized", 401)
     uid, doc = found
-
     expected = ALLOWED_DATA.get(key)
     if expected is None:
         return fail("invalid_key", 400)
-
     value = body().get("value")
     if not isinstance(value, expected):
         return fail("invalid_value", 400)
-
     if key == "appointments":
         if len(value) > MAX_APPOINTMENTS or not all(isinstance(a, dict) for a in value):
             return fail("invalid_value", 400)
-
     if len(json.dumps(value)) > MAX_DATA_BYTES:
         return fail("too_large", 413)
-
     if key == "appointments":
         old_keys = slot_keys((doc.get("data") or {}).get("appointments"))
         new_keys = slot_keys(value)
@@ -752,17 +646,13 @@ def save_data(key):
                     store.release_slot(done, uid)
                 return fail("slot_taken", 409)
             claimed.append(k)
-
     store.update(uid, {f"data.{key}": value})
-
     if key == "appointments":
-        for k in old_keys - new_keys:         # cancelled or removed: free the slot again
+        for k in old_keys - new_keys:
             store.release_slot(k, uid)
     return jsonify(ok=True)
 
-
 def slot_keys(appointments):
-    """Ids of the doctor/date/time slots held by a list of appointments (cancelled ones hold none)."""
     keys = set()
     for a in appointments if isinstance(appointments, list) else []:
         if not isinstance(a, dict) or str(a.get("status", "")).lower() == "cancelled":
@@ -773,22 +663,18 @@ def slot_keys(appointments):
     return keys
 
 def send_email(to, subject, text):
-    """Send through SMTP (SMTP_HOST / SMTP_PORT / SMTP_USERNAME / SMTP_PASSWORD / RESET_EMAIL_FROM)."""
     import smtplib
     import ssl
     from email.message import EmailMessage
-
     host = os.getenv("SMTP_HOST")
     user = os.getenv("SMTP_USERNAME")
     password = os.getenv("SMTP_PASSWORD")
     sender = os.getenv("RESET_EMAIL_FROM", user or "")
     if not all((host, user, password, sender)):
         return False
-
     message = EmailMessage()
     message["Subject"], message["From"], message["To"] = subject, sender, to
     message.set_content(text)
-
     port = int(os.getenv("SMTP_PORT", "587"))
     context = ssl.create_default_context()
     if port == 465:
@@ -802,34 +688,26 @@ def send_email(to, subject, text):
             smtp.send_message(message)
     return True
 
-
 def token_hash(token):
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
-
 @app.post("/api/forgot-password")
 def forgot_password():
-    """Emails a one-time reset link. The answer is the same whether or not the account exists."""
     ip = request.remote_addr or "?"
     if reset_limiter.blocked(ip):
         return fail("too_many", 429)
-
     email = body().get("email")
     if not isinstance(email, str) or not EMAIL_RE.fullmatch(email.strip()):
         return fail("invalid_email")
     email = email.strip().lower()
     reset_limiter.hit(ip)
-
     uid = uid_for(email)
     if store.get(uid) is None:
         return jsonify(ok=True)
-
     token = secrets.token_urlsafe(32)
     store.put_reset(token_hash(token), {"uid": uid, "exp": time.time() + RESET_TOKEN_MINUTES * 60})
-
     base = os.getenv("PUBLIC_URL", request.host_url).rstrip("/")
     link = f"{base}/reset-password.html?token={token}"
-
     try:
         sent = send_email(
             email,
@@ -838,64 +716,51 @@ def forgot_password():
             f"{link}\n\nIf you did not request this, you can ignore this email.",
         )
     except Exception:
-        app.logger.exception("Could not send the password reset e-mail")
         return fail("reset_unavailable", 503)
-
     if not sent:
         if env_flag("FLASK_DEBUG"):
-            app.logger.warning("SMTP not configured - reset link for %s: %s", email, link)
             return jsonify(ok=True)
         return fail("reset_unavailable", 503)
     return jsonify(ok=True)
 
-
 @app.post("/api/reset-password")
 def reset_password():
-    """Sets a new password using the token from the e-mailed link."""
     ip = request.remote_addr or "?"
     if reset_try_limiter.blocked(ip):
         return fail("too_many", 429)
     reset_try_limiter.hit(ip)
-
     data = body()
     token, password = data.get("token"), data.get("password")
     if not isinstance(token, str) or not token:
         return fail("invalid_token", 400)
     if not valid_password(password):
         return fail("weak_password")
-
     th = token_hash(token)
     record = store.get_reset(th)
     if not record or record.get("exp", 0) < time.time():
         if record:
             store.delete_reset(th)
         return fail("invalid_token", 400)
-
     if not store.update(record["uid"], {"password_hash": generate_password_hash(password)}):
         store.delete_reset(th)
         return fail("invalid_token", 400)
-
-    store.delete_reset(th)                    # one use only
+    store.delete_reset(th)
     session.clear()
     return jsonify(ok=True)
 
-
-# Serve frontend files from the configured directory using the allowlist above.
 @app.get("/")
 def home():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
-
-@app.get("/<path:filename>")
+@app.get("/path:filename")
 def site_file(filename):
     path = Path(filename)
     if any(part.startswith(".") for part in path.parts) or path.suffix.lower() not in STATIC_EXTENSIONS:
         abort(404)
-    resp = send_from_directory(FRONTEND_DIR, filename)      # refuses paths outside FRONTEND_DIR
+    resp = send_from_directory(FRONTEND_DIR, filename)
     if path.suffix.lower() in (".html", ".js"):
         resp.headers["Cache-Control"] = "no-cache"
     return resp
-
 
 if __name__ == "__main__":
     app.run(
