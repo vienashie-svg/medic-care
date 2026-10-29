@@ -409,26 +409,36 @@ def verify():
     key = f"{request.remote_addr}|{login_id}"
     if login_limiter.blocked(key):
         return fail(reason="too_many", status=429)
-    uid = uid_for(login_id)
-    doc = store.get(uid)
-    if doc is None:
-        login_limiter.hit(key)
-        return fail(reason="not_found", status=404)
-    if not check_password_hash(doc["password_hash"], password):
-        login_limiter.hit(key)
-        return fail(reason="bad", status=401)
-    login_limiter.reset(key)
-    if "@" not in str(doc.get("id", "")):
-        return fail(reason="not_found", status=404)
-    if LOGIN_EMAIL_VERIFICATION:
-        th, error = issue_login_link(uid, doc["id"])
-        if error:
-            session.pop("verified", None)
-            return fail(error, 503 if error == "email_unavailable" else 429)
-        session["verified"] = {"uid": uid, "t": time.time(), "th": th}
-        return jsonify(ok=True, id=doc["id"], needs_email=True, email=mask_email(doc["id"]))
-    session["verified"] = {"uid": uid, "t": time.time()}
-    return jsonify(ok=True, id=doc["id"], needs_email=False)
+    url = f"https://googleapis.com{FIREBASE_API_KEY}"
+    payload = {
+        "email": login_id,
+        "password": password,
+        "returnSecureToken": True
+    }
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        res_data = response.json()
+        if response.status_code == 200:
+            login_limiter.reset(key)
+            uid = res_data['localId']
+            if LOGIN_EMAIL_VERIFICATION:
+                th, error = issue_login_link(uid, login_id)
+                if error:
+                    session.pop("verified", None)
+                    return fail(error, 503 if error == "email_unavailable" else 429)
+                session["verified"] = {"uid": uid, "t": time.time(), "th": th}
+                return jsonify(ok=True, id=login_id, needs_email=True, email=mask_email(login_id))
+            session["verified"] = {"uid": uid, "t": time.time()}
+            return jsonify(ok=True, id=login_id, needs_email=False)
+        else:
+            login_limiter.hit(key)
+            error_msg = res_data.get('error', {}).get('message', 'Login failed')
+            if "EMAIL_NOT_FOUND" in error_msg:
+                return fail(reason="not_found", status=404)
+            return fail(reason="bad", status=401)
+    except Exception as e:
+        return fail(str(e), 500)
+
 
 @app.post("/api/login")
 def login():
@@ -766,8 +776,9 @@ def site_file(filename):
     return resp
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
     app.run(
-        host=os.getenv("HOST", "127.0.0.1"),
-        port=int(os.getenv("PORT", "5000")),
-        debug=env_flag("FLASK_DEBUG"),
+        host="0.0.0.0",
+        port=port,
+        debug=env_flag("FLASK_DEBUG")
     )
