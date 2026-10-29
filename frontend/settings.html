@@ -377,7 +377,11 @@ $("forgotBtn").addEventListener("click", () => {
 $("forgotSend").addEventListener("click", () => {
   const email = $("forgotEmail").value.trim();
   if (!Auth.isEmail(email)) return setErr("forgotEmail", "errForgot", t("forgot.err"));
-  // TODO: ask your backend to email a reset link to `email`
+  const r = Auth.requestReset(email);
+  if (!r.ok) {
+    return setErr("forgotEmail", "errForgot",
+      t(r.reason === "too_many" ? "err.toomany" : r.reason === "network" ? "err.network" : "err.reset"));
+  }
   closeModals();
   toast(t("forgot.sent", { email }));
 });

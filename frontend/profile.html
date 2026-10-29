@@ -772,8 +772,8 @@ byId("userDetailsForm").addEventListener("submit", (e) => {
   if (phone.err) errors.phone = phone.err;
   if (alt.err) errors.altPhone = alt.err;
 
-  // An account needs at least one way to be reached
-  if (!errors.email && !errors.phone && !email && !phone.value) {
+  // The account is identified by its e-mail, so it can't be empty. The phone number is optional contact info.
+  if (!errors.email && !email) {
     errors.email = "prof.err.email.empty";
   }
 
@@ -823,5 +823,6 @@ window.addEventListener("langchange", () => {
   repaintErrors();
 });
   </script>
+
 </body>
 </html>

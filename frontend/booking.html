@@ -1047,6 +1047,8 @@
       { title: "Review Details", subtitle: "Please review your appointment details carefully before confirming." }
     ];
 
+    
+
     function updateHeader() {
       if (currentStep === 2) {
         const data = subServicesData[selectedCategoryCode] || subServicesData['IM'];
@@ -1379,13 +1381,22 @@
         time: slotLabel(selectedTime),
         patient: { first: val("fn"), middle: val("mn"), last: val("ln"), suffix: val("suffix"), dob: val("dob"), sex: val("sex"), phone: val("phone"), email: val("email") }
       });
-      Auth.saveAppointments(list);
+      if (!Auth.saveAppointments(list)) {                    // the server refused it (slot just taken) or is unreachable
+        submitting = false;
+        Auth.refresh();
+        currentStep = 3; showStep(3);
+        const e = document.getElementById("err-doctor");
+        e.innerText = "We couldn't save your booking. That time may have just been taken - please pick another time or try again.";
+        e.classList.add("show");
+        return;
+      }
       location.href = "appointment.html?booked=1";
     }
 
     renderCalendar();
     refreshTimes();
   </script>
+
 </body>
 
 </html>

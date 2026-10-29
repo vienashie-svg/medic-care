@@ -363,9 +363,9 @@
         <h1 data-i18n="log.h1">Login</h1>
         <p class="sub" data-i18n="log.sub">Log in to your account.</p>
 
-        <label for="email" data-i18n="log.id">Email or Phone Number</label>
+        <label for="email" data-i18n="log.id">Email</label>
         <div class="field">
-          <input id="email" type="text" placeholder="Enter your email or phone number" data-i18n-ph="log.id.ph"
+          <input id="email" type="email" placeholder="Enter your email address" data-i18n-ph="log.id.ph"
             autocomplete="username">
         </div>
         <div class="msg" id="emailMsg"></div>
@@ -412,6 +412,22 @@
         <button type="button" class="linkbtn back" id="backLogin" style="color:#111" data-i18n="log.f.back">&lt; Back to
           Login</button>
       </form>
+    </div>
+
+    <!-- Confirm login by e-mail -->
+    <div class="overlay" id="verifyModal">
+      <div class="card">
+        <svg class="mail" width="42" height="36" viewBox="0 0 42 36" fill="none">
+          <rect x="2" y="8" width="32" height="24" rx="3" fill="#fff" stroke="#111" stroke-width="3" />
+          <path d="M3 11l15 11 15-11" stroke="#111" stroke-width="3" fill="none" />
+          <circle cx="33" cy="9" r="8" fill="#111" />
+          <path d="M29 9l3 3 5-6" stroke="#fff" stroke-width="2" fill="none" />
+        </svg>
+        <h2 data-i18n="log.v.title">Confirm it's you</h2>
+        <p id="vDesc"></p>
+        <button class="resend" id="vResend" type="button"><span id="vResendTxt" data-i18n="log.c.resend">Resend email</span></button>
+        <button type="button" class="linkbtn back" id="vCancel" style="color:#111" data-i18n="log.v.cancel">Cancel</button>
+      </div>
     </div>
 
     <!-- Check Email Modal -->
@@ -492,12 +508,12 @@
 
     /* ===== Modals ===== */
     function showModal(id) {
-      ["forgotModal", "checkModal"].forEach((m) => {
+      ["forgotModal", "checkModal", "verifyModal"].forEach((m) => {
         byId(m).classList.toggle("show", m === id);
       });
     }
 
-    const hideModals = () => showModal(null);
+    const hideModals = () => { stopVerify(); showModal(null); };
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") hideModals();
@@ -580,6 +596,9 @@
         } else if (NOT_FOUND_REASONS.includes(check.reason)) {
           setError("email", "emailMsg", "log.err.none");
           byId("email").focus();
+        } else if (check.reason === "email_unavailable") {
+          setError("pw", "pwMsg", "err.emailfail");
+          byId("pw").focus();
         } else if (check.reason === "too_many") {
           setError("pw", "pwMsg", "err.tooMany");
           byId("pw").focus();
@@ -590,6 +609,12 @@
           setError("pw", "pwMsg", "err.fail");
           byId("pw").focus();
         }
+        return;
+      }
+
+      // Step 1b: the server e-mailed a link. Wait until it is opened, then continue to step 2.
+      if (check.needsEmail) {
+        startVerify(check.id || id, check.email);
         return;
       }
 
@@ -615,6 +640,56 @@
 
       location.href = Auth.HOME;
     });
+
+    /* ===== Confirm login by e-mail link ===== */
+    let verifyTimer = null, verifyId = "", verifyMail = "", vLeft = 0, vCooldown = null;
+
+    function stopVerify() {
+      clearInterval(verifyTimer); verifyTimer = null;
+      clearInterval(vCooldown); vCooldown = null;
+    }
+
+    function paintVerify() {
+      byId("vDesc").textContent = t("log.v.desc", { email: verifyMail });
+      byId("vResendTxt").textContent = vLeft > 0 ? t("log.c.wait", { n: vLeft }) : t("log.c.resend");
+    }
+
+    function startVerify(id, maskedEmail) {
+      verifyId = id; verifyMail = maskedEmail;
+      vLeft = RESEND_SECONDS; byId("vResend").disabled = true;
+      paintVerify();
+      showModal("verifyModal");
+
+      clearInterval(vCooldown);
+      vCooldown = setInterval(() => {
+        vLeft = Math.max(0, vLeft - 1);
+        if (vLeft === 0) { clearInterval(vCooldown); byId("vResend").disabled = false; }
+        paintVerify();
+      }, 1000);
+
+      clearInterval(verifyTimer);
+      verifyTimer = setInterval(() => {
+        Auth.loginStatus((s) => {
+          if (!verifyTimer) return;
+          if (s.expired) { stopVerify(); hideModals(); toast(t("log.v.expired")); return; }
+          if (!s.confirmed) return;
+          stopVerify();
+          const r = Auth.login(verifyId);                 // the link was opened: start the session
+          if (r.ok) { location.href = Auth.HOME; return; }
+          hideModals();
+          toast(t("err.fail"));
+        });
+      }, 3000);
+    }
+
+    byId("vResend").addEventListener("click", () => {
+      if (byId("vResend").disabled) return;
+      const r = Auth.resendLoginEmail();
+      if (r.ok) { toast(t("log.t.resent")); startVerify(verifyId, verifyMail); }
+      else toast(t(r.reason === "too_many" ? "err.tooMany" : "err.emailfail"));
+    });
+    byId("vCancel").addEventListener("click", hideModals);
+    window.addEventListener("langchange", () => { if (verifyTimer) paintVerify(); });
 
     /* ===== Forgot password ===== */
     byId("forgotLink").addEventListener("click", (e) => {
@@ -669,7 +744,12 @@
         return;
       }
 
-      // TODO: call your backend here to actually send the reset link
+      const r = Auth.requestReset(email);
+      if (!r.ok) {
+        setError("fEmail", "fMsg",
+          r.reason === "too_many" ? "err.toomany" : r.reason === "network" ? "err.network" : "err.reset");
+        return;
+      }
       sentEmail = email;
       paintCheckDesc();
       showModal("checkModal");
@@ -678,8 +758,13 @@
 
     byId("resend").addEventListener("click", () => {
       if (byId("resend").disabled) return;
-      // TODO: call your backend here to resend the reset link
-      toast(t("log.t.resend"));
+      const r = Auth.requestReset(sentEmail);
+      if (r.ok) {
+        toast(t("log.t.resent"));
+        startCooldown();
+      } else {
+        toast(t(r.reason === "too_many" ? "err.toomany" : "err.reset"));
+      }
     });
 
     byId("openInbox").addEventListener("click", () => {

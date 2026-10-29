@@ -82,30 +82,16 @@
         refresh();
     }
 
+    // Accounts are identified by e-mail address only.
     function normalize(raw) {
-        let s = String(raw || "").trim();
-
-        if (s.includes("@")) {
-            return s.toLowerCase();
-        }
-
-        s = s.replace(/[\s\-().]/g, "");
-
-        if (/^\+63\d{10}$/.test(s)) {
-            s = "0" + s.slice(3);
-        } else if (/^63\d{10}$/.test(s)) {
-            s = "0" + s.slice(2);
-        }
-
-        return s;
+        return String(raw || "").trim().toLowerCase();
     }
 
     const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
-    const isPhone = (v) => /^\+?\d{7,15}$/.test(v);
 
     const validId = (raw) => {
         const n = normalize(raw);
-        return isEmail(n) || isPhone(n);
+        return isEmail(n);
     };
 
     function nameFromId(n) {
@@ -164,7 +150,8 @@
         const r = call("POST", "/verify", { id: raw, password: pw });
 
         if (r.data && r.data.ok) {
-            return { ok: true, id: r.data.id };
+            // needsEmail: the server e-mailed a confirmation link; the login finishes only after it is opened
+            return { ok: true, id: r.data.id, needsEmail: !!r.data.needs_email, email: r.data.email || "" };
         }
 
         return {
@@ -173,6 +160,34 @@
                 (r.status === 0 ? "network" :
                     !r.json ? "server_required" : "error")
         };
+    }
+
+    // Asks (without freezing the page) whether the e-mailed login link has been opened yet.
+    function loginStatus(cb) {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", API + "/login-status", true);
+        xhr.onload = function () {
+            let d = {};
+            try { d = JSON.parse(xhr.responseText || "{}"); } catch (e) { }
+            cb({ confirmed: !!d.confirmed, expired: !!d.expired });
+        };
+        xhr.onerror = function () { cb({ confirmed: false, expired: false, network: true }); };
+        xhr.send();
+    }
+
+    function resendLoginEmail() {
+        const r = call("POST", "/login/resend");
+        return r.data && r.data.ok
+            ? { ok: true }
+            : { ok: false, reason: (r.data && r.data.error) || (r.status === 0 ? "network" : "error") };
+    }
+
+    // Used by confirm-login.html, which is opened from the e-mail (possibly on another device).
+    function confirmLogin(token) {
+        const r = call("POST", "/confirm-login", { token: token });
+        return r.data && r.data.ok
+            ? { ok: true }
+            : { ok: false, reason: (r.data && r.data.error) || (r.status === 0 ? "network" : "error") };
     }
 
     function current() {
@@ -409,13 +424,27 @@
         return { setSidebar: setSidebar };
     }
 
+    // Password reset by e-mail (the account must use an e-mail address as its login).
+    function requestReset(email) {
+        const r = call("POST", "/forgot-password", { email: normalize(email) });
+        return r.data && r.data.ok
+            ? { ok: true }
+            : { ok: false, reason: (r.data && r.data.error) || (r.status === 0 ? "network" : "error") };
+    }
+
+    function resetPassword(token, pw) {
+        const r = call("POST", "/reset-password", { token: token, password: pw });
+        return r.data && r.data.ok
+            ? { ok: true }
+            : { ok: false, reason: (r.data && r.data.error) || (r.status === 0 ? "network" : "error") };
+    }
+
     const Auth = {
         LOGIN: LOGIN,
         HOME: HOME,
 
         normalize: normalize,
         isEmail: isEmail,
-        isPhone: isPhone,
         validId: validId,
 
         createUser: createUser,
@@ -440,6 +469,12 @@
         recordState: recordState,
 
         initSidebar: initSidebar,
+        loginStatus: loginStatus,
+        resendLoginEmail: resendLoginEmail,
+        confirmLogin: confirmLogin,
+        requestReset: requestReset,
+        resetPassword: resetPassword,
+
         refresh: refresh
     };
 

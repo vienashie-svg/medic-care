@@ -328,7 +328,7 @@ h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: .6px; color: 
 
   <script src="i18n.js"></script>
   <script>
-/* MEDIC CARE – Medical History page (localStorage via auth.js, walang database) */
+/* MEDIC CARE – Medical History page (saved to Firebase through the Flask API via auth.js) */
 
 /* --- Data ---
    Records come straight from the appointments, so booking / rescheduling /
@@ -468,5 +468,6 @@ render();
 // Re-draw the table when the language changes
 window.addEventListener("langchange", render);
   </script>
+
 </body>
 </html>

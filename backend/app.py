@@ -29,6 +29,11 @@ BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = Path(os.getenv("FRONTEND_DIR", BASE_DIR.parent / "frontend")).resolve()
 
 USERS_COLLECTION = os.getenv("FIRESTORE_USERS_COLLECTION", "users")
+RESETS_COLLECTION = "password_resets"
+SLOTS_COLLECTION = "appointment_slots"
+RESET_TOKEN_MINUTES = 30
+CHALLENGES_COLLECTION = "login_challenges"
+LOGIN_LINK_MINUTES = 10
 
 SESSION_DAYS = 7
 VERIFY_WINDOW = 300          # seconds a successful password check stays valid for login / password change
@@ -46,35 +51,38 @@ STATIC_EXTENSIONS = {
 }
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
-PHONE_RE = re.compile(r"^\+?\d{7,15}$")
 
 
 def env_flag(name, default=False):
     return os.getenv(name, "1" if default else "0").strip().lower() in ("1", "true", "yes", "on")
 
 
+class DatabaseUnavailable(Exception):
+    """The account database could not complete a request."""
+
+
 class MemoryStore:
     """Throw-away store for local testing. Set USE_MEMORY_DB=1. Data is lost on restart."""
 
     def __init__(self):
-        self._docs = {}
+        self._docs = {}                      # (collection, id) -> dict
         self._lock = threading.Lock()
 
-    def get(self, uid):
+    def get_doc(self, col, uid):
         with self._lock:
-            doc = self._docs.get(uid)
+            doc = self._docs.get((col, uid))
             return copy.deepcopy(doc) if doc is not None else None
 
-    def create(self, uid, doc):
+    def create_doc(self, col, uid, doc):
         with self._lock:
-            if uid in self._docs:
+            if (col, uid) in self._docs:
                 return False
-            self._docs[uid] = copy.deepcopy(doc)
+            self._docs[(col, uid)] = copy.deepcopy(doc)
             return True
 
-    def update(self, uid, fields):
+    def update_doc(self, col, uid, fields):
         with self._lock:
-            doc = self._docs.get(uid)
+            doc = self._docs.get((col, uid))
             if doc is None:
                 return False
             for path, value in fields.items():           # supports "data.appointments"
@@ -85,66 +93,131 @@ class MemoryStore:
                 target[last] = copy.deepcopy(value)
             return True
 
-    def delete(self, uid):
+    def delete_doc(self, col, uid):
         with self._lock:
-            self._docs.pop(uid, None)
+            self._docs.pop((col, uid), None)
 
 
 class FirestoreStore:
+    """Firebase Firestore, accessed only from this server with the Admin SDK."""
+
     def __init__(self):
         import firebase_admin
         from firebase_admin import credentials, firestore
         from google.api_core import exceptions
 
-        render_secret_path = "/opt/render/project/src/backend/firebase-key.json"
-        local_secret_path = BASE_DIR / "firebase-key.json"
-
-        if os.path.exists(render_secret_path):
-            cred = credentials.Certificate(render_secret_path)
-        elif local_secret_path.exists():
-            cred = credentials.Certificate(str(local_secret_path))
-        else:
-            raise FileNotFoundError("Hindi mahanap ang firebase-key.json file!")
-
         if not firebase_admin._apps:
-            firebase_admin.initialize_app(cred)
+            firebase_admin.initialize_app(load_firebase_credentials(credentials))
 
-        self._col = firestore.client().collection(USERS_COLLECTION)
+        self._db = firestore.client()
         self._exceptions = exceptions
 
-    def get(self, uid):
-        snap = self._col.document(uid).get()  # pyright: ignore[reportUnknownMemberType]
-        return snap.to_dict() if snap.exists else None
+    def _ref(self, col, uid):
+        return self._db.collection(col).document(uid)
 
-    def create(self, uid, doc):
+    def get_doc(self, col, uid):
         try:
-            self._col.document(uid).create(doc)       # fails if the account already exists
+            snap = self._ref(col, uid).get()
+            return snap.to_dict() if snap.exists else None
+        except self._exceptions.GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
+
+    def create_doc(self, col, uid, doc):
+        try:
+            self._ref(col, uid).create(doc)               # fails if it already exists
             return True
         except self._exceptions.AlreadyExists:
             return False
         except self._exceptions.GoogleAPICallError as error:
             raise DatabaseUnavailable from error
 
-    def update(self, uid, fields):
+    def update_doc(self, col, uid, fields):
         try:
-            self._col.document(uid).update(fields)
+            self._ref(col, uid).update(fields)
             return True
         except self._exceptions.NotFound:
             return False
+        except self._exceptions.GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
 
-    def delete(self, uid):
-        self._col.document(uid).delete()
+    def delete_doc(self, col, uid):
+        try:
+            self._ref(col, uid).delete()
+        except self._exceptions.GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
 
 
-class DatabaseUnavailable(Exception):
-    """The account database could not complete a request."""
+def load_firebase_credentials(credentials):
+    """Where the service-account key comes from, in order of preference:
+
+    1. FIREBASE_CREDENTIALS_JSON    the whole JSON as one environment variable (best for hosting)
+    2. GOOGLE_APPLICATION_CREDENTIALS / FIREBASE_KEY_PATH   path to the JSON file
+    3. backend/firebase-key.json    local development only - never commit this file
+    """
+    raw = os.getenv("FIREBASE_CREDENTIALS_JSON")
+    if raw:
+        return credentials.Certificate(json.loads(raw))
+
+    for candidate in (
+        os.getenv("FIREBASE_KEY_PATH"),
+        os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+        "/etc/secrets/firebase-key.json",                   # Render secret file
+        BASE_DIR / "firebase-key.json",
+    ):
+        if candidate and Path(candidate).exists():
+            return credentials.Certificate(str(candidate))
+
+    raise FileNotFoundError(
+        "Firebase credentials not found. Set FIREBASE_CREDENTIALS_JSON, or put the "
+        "service-account key at backend/firebase-key.json (or set FIREBASE_KEY_PATH)."
+    )
+
+
+class Store:
+    """Thin wrapper so the routes never touch a database client directly."""
+
+    def __init__(self, backend):
+        self._b = backend
+
+    # accounts
+    def get(self, uid):                return self._b.get_doc(USERS_COLLECTION, uid)
+    def create(self, uid, doc):        return self._b.create_doc(USERS_COLLECTION, uid, doc)
+    def update(self, uid, fields):     return self._b.update_doc(USERS_COLLECTION, uid, fields)
+    def delete(self, uid):             self._b.delete_doc(USERS_COLLECTION, uid)
+
+    # password-reset tokens (only a hash of the token is ever stored)
+    def get_reset(self, token_hash):   return self._b.get_doc(RESETS_COLLECTION, token_hash)
+    def put_reset(self, token_hash, doc):
+        self._b.delete_doc(RESETS_COLLECTION, token_hash)
+        self._b.create_doc(RESETS_COLLECTION, token_hash, doc)
+    def delete_reset(self, token_hash): self._b.delete_doc(RESETS_COLLECTION, token_hash)
+
+    # e-mail confirmation of a login (only a hash of the emailed token is stored)
+    def get_challenge(self, th):           return self._b.get_doc(CHALLENGES_COLLECTION, th)
+    def put_challenge(self, th, doc):
+        self._b.delete_doc(CHALLENGES_COLLECTION, th)
+        self._b.create_doc(CHALLENGES_COLLECTION, th, doc)
+    def confirm_challenge(self, th):       return self._b.update_doc(CHALLENGES_COLLECTION, th, {"confirmed": True})
+    def delete_challenge(self, th):        self._b.delete_doc(CHALLENGES_COLLECTION, th)
+
+    # appointment slots: one document per doctor + date + time, so two patients can't book the same slot
+    def claim_slot(self, key, uid):
+        if self._b.create_doc(SLOTS_COLLECTION, key, {"uid": uid, "t": time.time()}):
+            return True
+        existing = self._b.get_doc(SLOTS_COLLECTION, key)
+        return bool(existing and existing.get("uid") == uid)
+
+    def release_slot(self, key, uid):
+        existing = self._b.get_doc(SLOTS_COLLECTION, key)
+        if existing and existing.get("uid") == uid:
+            self._b.delete_doc(SLOTS_COLLECTION, key)
 
 
 def make_store():
     if env_flag("USE_MEMORY_DB"):
         print("WARNING: USE_MEMORY_DB=1 - using a temporary in-memory database, NOT Firebase.")
-        return MemoryStore()
-    return FirestoreStore()
+        return Store(MemoryStore())
+    return Store(FirestoreStore())
 
 
 store = make_store()
@@ -173,20 +246,12 @@ if env_flag("TRUST_PROXY"):                                    # behind nginx / 
 
 
 def normalize(raw):
-    """Same rules as Auth.normalize() in auth.js."""
-    s = str(raw or "").strip()
-    if "@" in s:
-        return s.lower()
-    s = re.sub(r"[\s\-().]", "", s)
-    if re.fullmatch(r"\+63\d{10}", s):
-        s = "0" + s[3:]
-    elif re.fullmatch(r"63\d{10}", s):
-        s = "0" + s[2:]
-    return s
+    """Same rules as Auth.normalize() in auth.js: accounts are identified by e-mail address."""
+    return str(raw or "").strip().lower()
 
 
 def valid_id(login_id):
-    return len(login_id) <= 254 and bool(EMAIL_RE.match(login_id) or PHONE_RE.match(login_id))
+    return len(login_id) <= 254 and bool(EMAIL_RE.match(login_id))
 
 
 def valid_password(pw):
@@ -266,8 +331,11 @@ class RateLimiter:
             self._hits.pop(key, None)
 
 
+login_mail_limiter = RateLimiter(limit=5, window=3600)  # confirmation e-mails per account
 login_limiter = RateLimiter(limit=5, window=300)      # wrong passwords per IP + account
 signup_limiter = RateLimiter(limit=20, window=3600)   # sign-ups per IP
+reset_limiter = RateLimiter(limit=5, window=3600)     # reset e-mails per IP
+reset_try_limiter = RateLimiter(limit=10, window=600) # reset-token attempts per IP
 
 
 @app.before_request
@@ -305,6 +373,17 @@ def server_error(_):
     return fail("server_error", 500)
 
 
+@app.errorhandler(DatabaseUnavailable)
+def database_down(error):
+    app.logger.error("Firestore request failed: %s", error.__cause__ or error)
+    return fail("database_unavailable", 503)
+
+
+@app.get("/api/health")
+def health():
+    return jsonify(ok=True)
+
+
 @app.get("/api/me")
 def me():
     found = current_user()
@@ -339,14 +418,13 @@ def signup():
 
     signup_limiter.hit(ip)
 
-    is_email = "@" in login_id
     doc = {
         "id": login_id,
         "password_hash": generate_password_hash(password),
         "profile": {
             "name": name,
-            "email": login_id if is_email else "",
-            "phone": "" if is_email else login_id,
+            "email": login_id,
+            "phone": "",
             "code": "+63",
         },
         "data": {},
@@ -391,8 +469,20 @@ def verify():
         return fail(reason="bad", status=401)
 
     login_limiter.reset(key)
+
+    if "@" not in str(doc.get("id", "")):          # old phone-number test accounts can no longer sign in
+        return fail(reason="not_found", status=404)
+
+    if LOGIN_EMAIL_VERIFICATION:
+        th, error = issue_login_link(uid, doc["id"])
+        if error:
+            session.pop("verified", None)
+            return fail(error, 503 if error == "email_unavailable" else 429)
+        session["verified"] = {"uid": uid, "t": time.time(), "th": th}
+        return jsonify(ok=True, id=doc["id"], needs_email=True, email=mask_email(doc["id"]))
+
     session["verified"] = {"uid": uid, "t": time.time()}
-    return jsonify(ok=True, id=doc["id"])
+    return jsonify(ok=True, id=doc["id"], needs_email=False)
 
 
 @app.post("/api/login")
@@ -400,10 +490,21 @@ def login():
     """Step 2: start the session. Only works right after a successful /api/verify."""
     verified = session.get("verified") or {}
     uid = verified.get("uid")
+    th = verified.get("th")                       # set when an e-mail confirmation is required
+    window = LOGIN_LINK_MINUTES * 60 if th else VERIFY_WINDOW
 
-    if not uid or time.time() - verified.get("t", 0) > VERIFY_WINDOW:
+    if not uid or time.time() - verified.get("t", 0) > window:
         session.pop("verified", None)
         return fail("not_verified", 401)
+
+    if th:
+        challenge = store.get_challenge(th)
+        if not challenge or challenge.get("uid") != uid or challenge.get("exp", 0) < time.time():
+            session.pop("verified", None)
+            return fail("not_verified", 401)
+        if not challenge.get("confirmed"):
+            return fail("email_not_confirmed", 401)
+        store.delete_challenge(th)                # the link works once
 
     asked = normalize(body().get("id"))
     if asked and uid_for(asked) != uid:
@@ -416,6 +517,101 @@ def login():
     session.clear()
     session["uid"] = uid
     session.permanent = True
+    return jsonify(ok=True)
+
+
+LOGIN_EMAIL_VERIFICATION = env_flag("LOGIN_EMAIL_VERIFICATION", True)
+
+
+def mask_email(email):
+    name, _, domain = email.partition("@")
+    return f"{name[:1]}***@{domain}"
+
+
+def issue_login_link(uid, email):
+    """Creates a one-time confirmation link and e-mails it. Returns (token_hash, error_code)."""
+    if login_mail_limiter.blocked(uid):
+        return None, "too_many"
+    login_mail_limiter.hit(uid)
+
+    old = (session.get("verified") or {}).get("th")
+    if old:
+        store.delete_challenge(old)
+
+    token = secrets.token_urlsafe(32)
+    th = token_hash(token)
+    store.put_challenge(th, {"uid": uid, "exp": time.time() + LOGIN_LINK_MINUTES * 60, "confirmed": False})
+
+    base = os.getenv("PUBLIC_URL", request.host_url).rstrip("/")
+    link = f"{base}/confirm-login.html?token={token}"
+    try:
+        sent = send_email(
+            email,
+            "Confirm your Medic Care login",
+            f"Someone is logging in to your Medic Care account. If this is you, open this link "
+            f"(valid for {LOGIN_LINK_MINUTES} minutes):\n\n{link}\n\n"
+            "If this was not you, ignore this email and change your password.",
+        )
+    except Exception:
+        app.logger.exception("Could not send the login confirmation e-mail")
+        store.delete_challenge(th)
+        return None, "email_unavailable"
+
+    if not sent:
+        if env_flag("FLASK_DEBUG"):
+            app.logger.warning("SMTP not configured - login link for %s: %s", email, link)
+        else:
+            store.delete_challenge(th)
+            return None, "email_unavailable"
+    return th, None
+
+
+@app.post("/api/confirm-login")
+def confirm_login():
+    """Called by confirm-login.html when the user opens the e-mailed link (on any device)."""
+    ip = request.remote_addr or "?"
+    if reset_try_limiter.blocked(ip):
+        return fail("too_many", 429)
+    reset_try_limiter.hit(ip)
+
+    token = body().get("token")
+    if not isinstance(token, str) or not token:
+        return fail("invalid_token", 400)
+
+    th = token_hash(token)
+    challenge = store.get_challenge(th)
+    if not challenge or challenge.get("exp", 0) < time.time():
+        return fail("invalid_token", 400)
+
+    store.confirm_challenge(th)
+    return jsonify(ok=True)
+
+
+@app.get("/api/login-status")
+def login_status():
+    """The login page polls this until the e-mailed link has been opened."""
+    th = (session.get("verified") or {}).get("th")
+    if not th:
+        return jsonify(ok=True, confirmed=False, expired=True)
+    challenge = store.get_challenge(th)
+    if not challenge or challenge.get("exp", 0) < time.time():
+        return jsonify(ok=True, confirmed=False, expired=True)
+    return jsonify(ok=True, confirmed=bool(challenge.get("confirmed")), expired=False)
+
+
+@app.post("/api/login/resend")
+def login_resend():
+    verified = session.get("verified") or {}
+    uid = verified.get("uid")
+    if not uid or not verified.get("th") or time.time() - verified.get("t", 0) > LOGIN_LINK_MINUTES * 60:
+        return fail("not_verified", 401)
+    doc = store.get(uid)
+    if not doc:
+        return fail("not_verified", 401)
+    th, error = issue_login_link(uid, doc["id"])
+    if error:
+        return fail(error, 503 if error == "email_unavailable" else 429)
+    session["verified"] = {"uid": uid, "t": time.time(), "th": th}
     return jsonify(ok=True)
 
 
@@ -529,7 +725,7 @@ def save_data(key):
     found = current_user()
     if not found:
         return fail("unauthorized", 401)
-    uid, _ = found
+    uid, doc = found
 
     expected = ALLOWED_DATA.get(key)
     if expected is None:
@@ -546,62 +742,143 @@ def save_data(key):
     if len(json.dumps(value)) > MAX_DATA_BYTES:
         return fail("too_large", 413)
 
+    if key == "appointments":
+        old_keys = slot_keys((doc.get("data") or {}).get("appointments"))
+        new_keys = slot_keys(value)
+        claimed = []
+        for k in new_keys - old_keys:
+            if not store.claim_slot(k, uid):
+                for done in claimed:
+                    store.release_slot(done, uid)
+                return fail("slot_taken", 409)
+            claimed.append(k)
+
     store.update(uid, {f"data.{key}": value})
+
+    if key == "appointments":
+        for k in old_keys - new_keys:         # cancelled or removed: free the slot again
+            store.release_slot(k, uid)
     return jsonify(ok=True)
+
+
+def slot_keys(appointments):
+    """Ids of the doctor/date/time slots held by a list of appointments (cancelled ones hold none)."""
+    keys = set()
+    for a in appointments if isinstance(appointments, list) else []:
+        if not isinstance(a, dict) or str(a.get("status", "")).lower() == "cancelled":
+            continue
+        doctor, date, slot = (str(a.get(f, "")).strip() for f in ("doctorName", "date", "time"))
+        if doctor and date and slot:
+            keys.add(hashlib.sha256(f"{doctor}|{date}|{slot}".encode("utf-8")).hexdigest())
+    return keys
+
+def send_email(to, subject, text):
+    """Send through SMTP (SMTP_HOST / SMTP_PORT / SMTP_USERNAME / SMTP_PASSWORD / RESET_EMAIL_FROM)."""
+    import smtplib
+    import ssl
+    from email.message import EmailMessage
+
+    host = os.getenv("SMTP_HOST")
+    user = os.getenv("SMTP_USERNAME")
+    password = os.getenv("SMTP_PASSWORD")
+    sender = os.getenv("RESET_EMAIL_FROM", user or "")
+    if not all((host, user, password, sender)):
+        return False
+
+    message = EmailMessage()
+    message["Subject"], message["From"], message["To"] = subject, sender, to
+    message.set_content(text)
+
+    port = int(os.getenv("SMTP_PORT", "587"))
+    context = ssl.create_default_context()
+    if port == 465:
+        with smtplib.SMTP_SSL(host, port, context=context, timeout=15) as smtp:
+            smtp.login(user, password)
+            smtp.send_message(message)
+    else:
+        with smtplib.SMTP(host, port, timeout=15) as smtp:
+            smtp.starttls(context=context)
+            smtp.login(user, password)
+            smtp.send_message(message)
+    return True
+
+
+def token_hash(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
 
 @app.post("/api/forgot-password")
 def forgot_password():
-    try:
-        import smtplib
-        import ssl
-        from email.message import EmailMessage
-        from firebase_admin import auth # type: ignore
+    """Emails a one-time reset link. The answer is the same whether or not the account exists."""
+    ip = request.remote_addr or "?"
+    if reset_limiter.blocked(ip):
+        return fail("too_many", 429)
 
-        data = body()
-        email = data.get("email")
-        if not isinstance(email, str) or not EMAIL_RE.fullmatch(email.strip()):
-            return fail("invalid_email")
-        email = email.strip().lower()
+    email = body().get("email")
+    if not isinstance(email, str) or not EMAIL_RE.fullmatch(email.strip()):
+        return fail("invalid_email")
+    email = email.strip().lower()
+    reset_limiter.hit(ip)
 
-        smtp_host = os.getenv("SMTP_HOST")
-        smtp_user = os.getenv("SMTP_USERNAME")
-        smtp_password = os.getenv("SMTP_PASSWORD")
-        sender = os.getenv("RESET_EMAIL_FROM", smtp_user or "")
-        if not all((smtp_host, smtp_user, smtp_password, sender)):
-            return fail("reset_unavailable", 503)
-
-        try:
-            reset_link = auth.generate_password_reset_link(email)
-        except auth.UserNotFoundError:
-            # Keep the response identical for unknown accounts.
-            return jsonify(ok=True)
-
-        message = EmailMessage()
-        message["Subject"] = "Reset your Medic Care password"
-        message["From"] = sender
-        message["To"] = email
-        message.set_content(
-            "Use this link to reset your Medic Care password. "
-            "If you did not request this, you can ignore this email.\n\n"
-            f"{reset_link}"
-        )
-
-        port = int(os.getenv("SMTP_PORT", "587"))
-        if port == 465:
-            with smtplib.SMTP_SSL(
-                smtp_host, port, context=ssl.create_default_context(), timeout=15
-            ) as smtp:
-                smtp.login(smtp_user, smtp_password)
-                smtp.send_message(message)
-        else:
-            with smtplib.SMTP(smtp_host, port, timeout=15) as smtp:
-                smtp.starttls(context=ssl.create_default_context())
-                smtp.login(smtp_user, smtp_password)
-                smtp.send_message(message)
+    uid = uid_for(email)
+    if store.get(uid) is None:
         return jsonify(ok=True)
+
+    token = secrets.token_urlsafe(32)
+    store.put_reset(token_hash(token), {"uid": uid, "exp": time.time() + RESET_TOKEN_MINUTES * 60})
+
+    base = os.getenv("PUBLIC_URL", request.host_url).rstrip("/")
+    link = f"{base}/reset-password.html?token={token}"
+
+    try:
+        sent = send_email(
+            email,
+            "Reset your Medic Care password",
+            f"Use this link to reset your Medic Care password (valid for {RESET_TOKEN_MINUTES} minutes):\n\n"
+            f"{link}\n\nIf you did not request this, you can ignore this email.",
+        )
     except Exception:
-        app.logger.exception("Password reset request failed")
+        app.logger.exception("Could not send the password reset e-mail")
         return fail("reset_unavailable", 503)
+
+    if not sent:
+        if env_flag("FLASK_DEBUG"):
+            app.logger.warning("SMTP not configured - reset link for %s: %s", email, link)
+            return jsonify(ok=True)
+        return fail("reset_unavailable", 503)
+    return jsonify(ok=True)
+
+
+@app.post("/api/reset-password")
+def reset_password():
+    """Sets a new password using the token from the e-mailed link."""
+    ip = request.remote_addr or "?"
+    if reset_try_limiter.blocked(ip):
+        return fail("too_many", 429)
+    reset_try_limiter.hit(ip)
+
+    data = body()
+    token, password = data.get("token"), data.get("password")
+    if not isinstance(token, str) or not token:
+        return fail("invalid_token", 400)
+    if not valid_password(password):
+        return fail("weak_password")
+
+    th = token_hash(token)
+    record = store.get_reset(th)
+    if not record or record.get("exp", 0) < time.time():
+        if record:
+            store.delete_reset(th)
+        return fail("invalid_token", 400)
+
+    if not store.update(record["uid"], {"password_hash": generate_password_hash(password)}):
+        store.delete_reset(th)
+        return fail("invalid_token", 400)
+
+    store.delete_reset(th)                    # one use only
+    session.clear()
+    return jsonify(ok=True)
+
 
 # Serve frontend files from the configured directory using the allowlist above.
 @app.get("/")
