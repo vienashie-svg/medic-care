@@ -129,13 +129,22 @@ class FirestoreStore:
             raise DatabaseUnavailable
 
     def create_doc(self, col, uid, doc):
+        # Siguraduhing tama ang pagkakabuo ng path
         url = f"{self._base_url}/{col}?documentId={uid}&key={FIREBASE_API_KEY}"
         payload = {"fields": {k: self._to_firestore_value(v) for k, v in doc.items()}}
         try:
-            res = requests.post(url, json=payload, timeout=10)
-            return res.status_code == 200
-        except Exception:
+            # Idagdag ang json header para malaman ni Google na JSON ang pinapadala mo
+            headers = {"Content-Type": "application/json"}
+            res = requests.post(url, json=payload, headers=headers, timeout=10)
+            
+            if res.status_code not in (200, 201):
+                print(f"Firestore Error Context: {res.status_code} - {res.text}")
+                return False
+            return True
+        except Exception as e:
+            print(f"Connection Exception: {str(e)}")
             raise DatabaseUnavailable
+
 
     def update_doc(self, col, uid, fields):
         current = self.get_doc(col, uid)
@@ -384,36 +393,64 @@ def signup():
     ip = request.remote_addr or "unknown"
     if signup_limiter.blocked(ip):
         return fail("too_many", 429)
+    
     data = body()
     login_id = normalize(data.get("id"))
     password = data.get("password")
     profile = data.get("profile") if isinstance(data.get("profile"), dict) else {}
     name = str(profile.get("name", "")).strip()
+    
     if not name or len(name) > 200:
         return fail("invalid_name")
     if not valid_id(login_id):
         return fail("invalid_id")
     if not valid_password(password):
         return fail("weak_password")
+        
     signup_limiter.hit(ip)
-    doc = {
-        "id": login_id,
-        "password_hash": generate_password_hash(password),
-        "profile": {
-            "name": name,
-            "email": login_id,
-            "phone": "",
-            "code": "+63",
-        },
-        "data": {},
-        "created_at": int(time.time()),
+
+    firebase_auth_url = f"https://googleapis.com{FIREBASE_API_KEY}"
+    auth_payload = {
+        "email": login_id,
+        "password": password,
+        "returnSecureToken": True
     }
+    
     try:
-        if not store.create(uid_for(login_id), doc):
+        auth_res = requests.post(firebase_auth_url, json=auth_payload, timeout=10)
+        auth_data = auth_res.json()
+        
+        if auth_res.status_code != 200:
+            error_msg = auth_data.get('error', {}).get('message', '')
+            if "EMAIL_EXISTS" in error_msg:
+                return fail("An account with this email already exists.", 409)
+            return fail(f"Auth signup failed: {error_msg}", 400)
+            
+        firebase_uid = auth_data['localId']
+        
+        doc = {
+            "id": login_id,
+            "password_hash": generate_password_hash(password), 
+            "profile": {
+                "name": name,
+                "email": login_id,
+                "phone": "",
+                "code": "+63",
+            },
+            "data": {},
+            "created_at": int(time.time()),
+        }
+        
+        if not store.create(firebase_uid, doc):
             return fail("exists", 409)
+            
         return jsonify(ok=True, id=login_id), 201
+        
     except DatabaseUnavailable:
         return fail("database_unavailable", 503)
+    except Exception as e:
+        return fail(str(e), 500)
+
 
 @app.post("/api/verify")
 def verify():
