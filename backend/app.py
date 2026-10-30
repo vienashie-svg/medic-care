@@ -90,16 +90,15 @@ class MemoryStore:
 
 class FirestoreStore:
     def __init__(self):
-        self._base_url = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
+        self._base_url = f"https://googleapis.com{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 
     def _to_firestore_value(self, val):
-        # bool MUST be checked before int: in Python, bool is a subclass of int.
         if val is None:
             return {"nullValue": None}
         if isinstance(val, bool):
             return {"booleanValue": val}
         if isinstance(val, int):
-            return {"integerValue": str(val)}          # Firestore sends 64-bit ints as strings
+            return {"integerValue": str(val)}
         if isinstance(val, float):
             return {"doubleValue": val}
         if isinstance(val, str):
@@ -108,7 +107,7 @@ class FirestoreStore:
             return {"mapValue": {"fields": {str(k): self._to_firestore_value(v) for k, v in val.items()}}}
         if isinstance(val, (list, tuple, set)):
             return {"arrayValue": {"values": [self._to_firestore_value(v) for v in val]}}
-        raise TypeError(f"Unsupported value type for Firestore: {type(val).__name__}")
+        return {"stringValue": str(val)}
 
     def _from_firestore_value(self, f_val):
         if not isinstance(f_val, dict) or not f_val:
@@ -120,7 +119,7 @@ class FirestoreStore:
         if k == "booleanValue":
             return bool(v)
         if k == "integerValue":
-            return int(v)                               # arrives as a string, e.g. "42"
+            return int(v)
         if k == "doubleValue":
             return float(v)
         if k in ("stringValue", "timestampValue"):
@@ -132,7 +131,7 @@ class FirestoreStore:
         return v
 
     def get_doc(self, col, uid):
-        url = f"{self._base_url}/{col}/{uid}"
+        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
         try:
             res = requests.get(url, timeout=10)
             if res.status_code == 200:
@@ -141,21 +140,17 @@ class FirestoreStore:
             elif res.status_code == 404:
                 return None
             raise DatabaseUnavailable
-        except Exception as e:
-            raise DatabaseUnavailable from e
+        except Exception:
+            raise DatabaseUnavailable
 
     def create_doc(self, col, uid, doc):
-        url = f"{self._base_url}/{col}?documentId={uid}"
-        if self.get_doc(col, uid) is not None:
-            return False
+        url = f"{self._base_url}/{col}?documentId={uid}&key={FIREBASE_API_KEY}"
         payload = {"fields": {k: self._to_firestore_value(v) for k, v in doc.items()}}
         try:
             res = requests.post(url, json=payload, timeout=10)
-            if res.status_code == 200:
-                return True
+            return res.status_code == 200
+        except Exception:
             raise DatabaseUnavailable
-        except Exception as e:
-            raise DatabaseUnavailable from e
 
     def update_doc(self, col, uid, fields):
         current = self.get_doc(col, uid)
@@ -167,20 +162,21 @@ class FirestoreStore:
             for part in parents:
                 target = target.setdefault(part, {})
             target[last] = value
-        url = f"{self._base_url}/{col}/{uid}"
+        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
         payload = {"fields": {k: self._to_firestore_value(v) for k, v in current.items()}}
         try:
             res = requests.patch(url, json=payload, timeout=10)
             return res.status_code == 200
-        except Exception as e:
-            raise DatabaseUnavailable from e
+        except Exception:
+            raise DatabaseUnavailable
 
     def delete_doc(self, col, uid):
-        url = f"{self._base_url}/{col}/{uid}"
+        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
         try:
             requests.delete(url, timeout=10)
-        except Exception as e:
-            raise DatabaseUnavailable from e
+        except Exception:
+            raise DatabaseUnavailable
+
 
 class Store:
     def __init__(self, backend):
