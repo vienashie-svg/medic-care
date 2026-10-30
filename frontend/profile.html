@@ -700,7 +700,7 @@ function checkBirth(m, d, y) {
   if (!m && !d && !y) return "";
   if (!m || !d || !y) return "err.bday.incomplete";
 
-  const year = Number(y), month = Number(m), day = Number(d);
+  const year = parseInt(y, 10), month = parseInt(m, 10), day = parseInt(d, 10);
   const date = new Date(year, month - 1, day);
 
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
@@ -724,9 +724,9 @@ function loadProfile() {
   byId("altPhone").value = toInputPhone(extra.altPhone);
   byId("address").value = extra.address || "";
   byId("gender").value = extra.gender || "";
-  byId("bdayMonth").value = extra.bdayMonth || "";
-  byId("bdayDay").value = extra.bdayDay || "";
-  byId("bdayYear").value = extra.bdayYear || "";
+  byId("bdayMonth").value = extra.bdayMonth ? String(extra.bdayMonth) : "";
+  byId("bdayDay").value = extra.bdayDay ? String(extra.bdayDay) : "";
+  byId("bdayYear").value = extra.bdayYear ? String(extra.bdayYear) : "";
 
   paintAvatar(acct.name);
 }
@@ -794,9 +794,9 @@ byId("userDetailsForm").addEventListener("submit", (e) => {
     altPhone: alt.value,
     address: address,
     gender: gender,
-    bdayMonth: m,
-    bdayDay: d,
-    bdayYear: y
+    bdayMonth: m ? parseInt(m, 10) : null,   // integers, not strings ("" -> null)
+    bdayDay: d ? parseInt(d, 10) : null,
+    bdayYear: y ? parseInt(y, 10) : null
   });
 
   if (!savedAccount || !savedExtra) {

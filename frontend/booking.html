@@ -1004,13 +1004,13 @@
 
     const _now = new Date();
     let currentCalDate = new Date(_now.getFullYear(), _now.getMonth(), 1);
-    let selectedDate = String(_now.getDate());
+    let selectedDate = _now.getDate();            // integer day of month
     let selectedTime = "10:00 AM";
     const isoOf = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const selectedISO = () => isoOf(currentCalDate.getFullYear(), currentCalDate.getMonth(), Number(selectedDate));
+    const selectedISO = () => isoOf(currentCalDate.getFullYear(), currentCalDate.getMonth(), selectedDate);
     // "10:00 AM" -> "10:00AM - 11:00AM" (same format the My Appointment page uses)
     function slotLabel(t) {
-      const [hm, ap] = t.split(" "); let h = Number(hm.split(":")[0]);
+      const [hm, ap] = t.split(" "); const h = parseInt(hm.split(":")[0], 10);
       const next = h + 1, nextAp = (h === 11 && ap === "AM") ? "PM" : ap;
       return `${h}:00${ap} - ${next > 12 ? next - 12 : next}:00${nextAp}`;
     }
@@ -1326,7 +1326,7 @@
         const dayCell = document.createElement("div");
         dayCell.className = "day-cell";
 
-        if (day.toString() === selectedDate && month === currentCalDate.getMonth()) {
+        if (day === selectedDate && month === currentCalDate.getMonth()) {
           dayCell.classList.add("selected");
         }
 
@@ -1341,7 +1341,7 @@
           e.preventDefault();
           document.querySelectorAll(".day-cell").forEach(c => c.classList.remove("selected"));
           this.classList.add("selected");
-          selectedDate = day.toString();
+          selectedDate = day;
           refreshTimes();
           document.getElementById("err-doctor").classList.remove("show");
         };
@@ -1367,7 +1367,7 @@
       }
       submitting = true;
       const list = Auth.getAppointments();
-      const nextId = list.reduce((n, a) => Math.max(n, a.id), 0) + 1;
+      const nextId = list.reduce((n, a) => Math.max(n, Number.isInteger(a.id) ? a.id : 0), 0) + 1;
       const val = (id) => document.getElementById(id).value.trim();
       list.push({
         id: nextId,

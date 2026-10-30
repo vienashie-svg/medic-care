@@ -941,7 +941,7 @@
     $("grid").addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-act]");
       if (!btn || btn.disabled) return;
-      activeId = Number(btn.closest(".card").dataset.id);
+      activeId = parseInt(btn.closest(".card").dataset.id, 10);
       const a = appointments.find((x) => x.id === activeId);
       if (!a) return;
       const d = docOf(a);

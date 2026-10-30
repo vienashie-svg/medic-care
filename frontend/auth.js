@@ -274,10 +274,10 @@
             : fallback;
     }
 
-    // Returns the saved value on success and null on failure.
+    // Returns true when saved, false on failure (always a real boolean).
     function setData(key, value) {
         if (!cache) {
-            return null;
+            return false;
         }
 
         const r = call("PUT", "/data/" + encodeURIComponent(key), { value: value });
@@ -285,17 +285,28 @@
         if (r.data && r.data.ok) {
             cache.data = cache.data || {};
             cache.data[key] = value;
-            return value === undefined || value === null ? true : value;
+            return true;
         }
 
-        return null;
+        return false;
     }
 
     const getAppointments = () => {
         const list = getData("appointments", []);
-        return (Array.isArray(list) ? list : []).map((a) =>
+        const items = (Array.isArray(list) ? list : []).map((a) =>
             a.status === "Pending" ? Object.assign({}, a, { status: "Confirmed" }) : a
         );
+
+        // ids must be integers; repair anything that came back as text like "3"
+        let maxId = 0;
+        items.forEach((a) => {
+            const n = parseInt(a.id, 10);
+            if (Number.isInteger(n) && n > maxId) maxId = n;
+        });
+        return items.map((a) => {
+            const n = parseInt(a.id, 10);
+            return Number.isInteger(n) ? Object.assign({}, a, { id: n }) : Object.assign({}, a, { id: ++maxId });
+        });
     };
 
     const saveAppointments = (list) => setData("appointments", list);

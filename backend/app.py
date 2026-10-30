@@ -29,11 +29,12 @@ RESET_TOKEN_MINUTES = 30
 CHALLENGES_COLLECTION = "login_challenges"
 LOGIN_LINK_MINUTES = 10
 
-SESSION_DAYS = 7
-VERIFY_WINDOW = 300          
-MAX_PHOTO_CHARS = 600_000    
-MAX_DATA_BYTES = 300_000     
-MAX_APPOINTMENTS = 500
+SESSION_DAYS: int = 7
+VERIFY_WINDOW: int = 300          
+MAX_PHOTO_CHARS: int = 600_000    
+MAX_DATA_BYTES: int = 300_000     
+MAX_APPOINTMENTS: int = 500
+APPOINTMENT_STATUSES = {"pending", "confirmed", "cancelled", "completed"}
 
 ALLOWED_DATA = {"appointments": list, "profileExtra": dict}
 
@@ -89,35 +90,45 @@ class MemoryStore:
 
 class FirestoreStore:
     def __init__(self):
-        self._base_url = f"https://googleapis.com{FIREBASE_PROJECT_ID}/databases/(default)/documents"
+        self._base_url = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 
     def _to_firestore_value(self, val):
-        if isinstance(val, dict):
-            return {"mapValue": {"fields": {k: self._to_firestore_value(v) for k, v in val.items()}}}
-        elif isinstance(val, list):
-            return {"arrayValue": {"values": [self._to_firestore_value(v) for v in val]}}
-        elif isinstance(val, (int, float)):
-            return {"doubleValue": float(val)}
-        elif isinstance(val, bool):
+        # bool MUST be checked before int: in Python, bool is a subclass of int.
+        if val is None:
+            return {"nullValue": None}
+        if isinstance(val, bool):
             return {"booleanValue": val}
-        else:
-            return {"stringValue": str(val)}
+        if isinstance(val, int):
+            return {"integerValue": str(val)}          # Firestore sends 64-bit ints as strings
+        if isinstance(val, float):
+            return {"doubleValue": val}
+        if isinstance(val, str):
+            return {"stringValue": val}
+        if isinstance(val, dict):
+            return {"mapValue": {"fields": {str(k): self._to_firestore_value(v) for k, v in val.items()}}}
+        if isinstance(val, (list, tuple, set)):
+            return {"arrayValue": {"values": [self._to_firestore_value(v) for v in val]}}
+        raise TypeError(f"Unsupported value type for Firestore: {type(val).__name__}")
 
     def _from_firestore_value(self, f_val):
         if not isinstance(f_val, dict) or not f_val:
             return f_val
-        k = list(f_val.keys())[0]
+        k = next(iter(f_val))
         v = f_val[k]
-        if k == "mapValue":
-            return {fields_k: self._from_firestore_value(fields_v) for fields_k, fields_v in v.get("fields", {}).items()}
-        elif k == "arrayValue":
-            return [self._from_firestore_value(i) for i in v.get("values", [])]
-        elif k in ("doubleValue", "integerValue"):
-            return float(v) if k == "doubleValue" else int(v)
-        elif k == "booleanValue":
+        if k == "nullValue":
+            return None
+        if k == "booleanValue":
             return bool(v)
-        elif k == "stringValue":
+        if k == "integerValue":
+            return int(v)                               # arrives as a string, e.g. "42"
+        if k == "doubleValue":
+            return float(v)
+        if k in ("stringValue", "timestampValue"):
             return str(v)
+        if k == "mapValue":
+            return {fk: self._from_firestore_value(fv) for fk, fv in v.get("fields", {}).items()}
+        if k == "arrayValue":
+            return [self._from_firestore_value(i) for i in v.get("values", [])]
         return v
 
     def get_doc(self, col, uid):
@@ -247,6 +258,31 @@ def valid_password(pw):
 
 def uid_for(login_id):
     return hashlib.sha256(login_id.encode("utf-8")).hexdigest()
+
+def is_int(v):
+    """True only for real integers (bool is a subclass of int, so exclude it)."""
+    return isinstance(v, int) and not isinstance(v, bool)
+
+def is_text(v, max_len):
+    return isinstance(v, str) and len(v) <= max_len
+
+def valid_appointment(a):
+    """Type-check one appointment record coming from the browser."""
+    if not isinstance(a, dict):
+        return False
+    if "id" in a and not is_int(a["id"]):
+        return False
+    for field, limit in (("doctor", 100), ("doctorName", 200), ("spec", 200), ("service", 300),
+                         ("specific", 300), ("date", 10), ("time", 40), ("status", 20)):
+        if field in a and not is_text(a[field], limit):
+            return False
+    if "status" in a and a["status"].lower() not in APPOINTMENT_STATUSES:
+        return False
+    if "date" in a and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", a["date"]):
+        return False
+    if "patient" in a and not isinstance(a["patient"], dict):
+        return False
+    return True
 
 def body():
     data = request.get_json(silent=True)
@@ -409,7 +445,7 @@ def verify():
     key = f"{request.remote_addr}|{login_id}"
     if login_limiter.blocked(key):
         return fail(reason="too_many", status=429)
-    url = f"https://googleapis.com{FIREBASE_API_KEY}"
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
     payload = {
         "email": login_id,
         "password": password,
@@ -564,7 +600,7 @@ def validate_profile_patch(patch):
         out["email"] = email
     if "phone" in patch:
         phone = str(patch["phone"] or "").strip()
-        if len(phone) > 30 or not re.fullmatch(r"[0-9+-().\s]*", phone):
+        if len(phone) > 30 or not re.fullmatch(r"[0-9+\-().\s]*", phone):
             return None, "invalid_phone"
         out["phone"] = phone
     if "code" in patch:
@@ -629,7 +665,7 @@ def delete_account():
     session.clear()
     return jsonify(ok=True)
 
-@app.put("/api/data/")
+@app.put("/api/data/<key>")
 def save_data(key):
     found = current_user()
     if not found:
@@ -642,7 +678,7 @@ def save_data(key):
     if not isinstance(value, expected):
         return fail("invalid_value", 400)
     if key == "appointments":
-        if len(value) > MAX_APPOINTMENTS or not all(isinstance(a, dict) for a in value):
+        if len(value) > MAX_APPOINTMENTS or not all(valid_appointment(a) for a in value):
             return fail("invalid_value", 400)
     if len(json.dumps(value)) > MAX_DATA_BYTES:
         return fail("too_large", 413)
@@ -765,7 +801,7 @@ def home():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
 
-@app.get("/path:filename")
+@app.get("/<path:filename>")
 def site_file(filename):
     path = Path(filename)
     if any(part.startswith(".") for part in path.parts) or path.suffix.lower() not in STATIC_EXTENSIONS:
@@ -776,7 +812,7 @@ def site_file(filename):
     return resp
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port: int = int(os.environ.get("PORT", "10000"))
     app.run(
         host="0.0.0.0",
         port=port,
