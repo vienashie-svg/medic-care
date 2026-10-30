@@ -11,6 +11,7 @@ from pathlib import Path
 
 from flask import Flask, abort, jsonify, request, send_from_directory, session 
 from werkzeug.security import check_password_hash, generate_password_hash 
+import requests
 
 try:                                    
     from dotenv import load_dotenv 
@@ -44,6 +45,8 @@ STATIC_EXTENSIONS = {
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
 
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "AIzaSyDnpYP-ZIBrNZ5RQMXJUPswIQjFhu-RMjk")
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "medic-care-10")
 
 def env_flag(name, default=False):
     return os.getenv(name, "1" if default else "0").strip().lower() in ("1", "true", "yes", "on")
@@ -86,81 +89,94 @@ class MemoryStore:
             self._docs.pop((col, uid), None)
 
 class FirestoreStore:
-    """Firestore via the firebase-admin SDK (service account). The SDK keeps native
-    types: bool, int, float, str, None, list, dict."""
-
     def __init__(self):
-        self._db = None
-        self._lock = threading.Lock()
+        self._base_url = f"https://googleapis.com{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 
-    def _client(self):
-        if self._db is not None:
-            return self._db
-        with self._lock:
-            if self._db is not None:
-                return self._db
-            try:
-                import firebase_admin
-                from firebase_admin import credentials, firestore
-                if not firebase_admin._apps:
-                    raw = os.getenv("FIREBASE_CREDENTIALS_JSON")
-                    if raw:
-                        cred = credentials.Certificate(json.loads(raw))
-                    else:
-                        path = os.getenv("FIREBASE_CREDENTIALS_FILE", str(BASE_DIR / "firebase-key.json"))
-                        cred = credentials.Certificate(path)
-                    firebase_admin.initialize_app(cred)
-                self._db = firestore.client()
-            except Exception as e:
-                print("Firestore init failed:", repr(e))
-                raise DatabaseUnavailable from e
-            return self._db
+    def _to_firestore_value(self, val):
+        if val is None:
+            return {"nullValue": None}
+        if isinstance(val, bool):
+            return {"booleanValue": val}
+        if isinstance(val, int):
+            return {"integerValue": str(val)}
+        if isinstance(val, float):
+            return {"doubleValue": val}
+        if isinstance(val, str):
+            return {"stringValue": val}
+        if isinstance(val, dict):
+            return {"mapValue": {"fields": {str(k): self._to_firestore_value(v) for k, v in val.items()}}}
+        if isinstance(val, (list, tuple, set)):
+            return {"arrayValue": {"values": [self._to_firestore_value(v) for v in val]}}
+        return {"stringValue": str(val)}
 
-    def _ref(self, col, uid):
-        return self._client().collection(col).document(uid)
+    def _from_firestore_value(self, f_val):
+        if not isinstance(f_val, dict) or not f_val:
+            return f_val
+        k = next(iter(f_val))
+        v = f_val[k]
+        if k == "nullValue":
+            return None
+        if k == "booleanValue":
+            return bool(v)
+        if k == "integerValue":
+            return int(v)
+        if k == "doubleValue":
+            return float(v)
+        if k in ("stringValue", "timestampValue"):
+            return str(v)
+        if k == "mapValue":
+            return {fk: self._from_firestore_value(fv) for fk, fv in v.get("fields", {}).items()}
+        if k == "arrayValue":
+            return [self._from_firestore_value(i) for i in v.get("values", [])]
+        return v
 
     def get_doc(self, col, uid):
+        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
         try:
-            snap = self._ref(col, uid).get()
-            return snap.to_dict() if snap.exists else None
-        except DatabaseUnavailable:
-            raise
-        except Exception as e:
-            print("Firestore get failed:", repr(e))
-            raise DatabaseUnavailable from e
+            res = requests.get(url, timeout=10)
+            if res.status_code == 200:
+                fields = res.json().get("fields", {})
+                return {k: self._from_firestore_value(v) for k, v in fields.items()}
+            elif res.status_code == 404:
+                return None
+            raise DatabaseUnavailable
+        except Exception:
+            raise DatabaseUnavailable
 
     def create_doc(self, col, uid, doc):
+        url = f"{self._base_url}/{col}?documentId={uid}&key={FIREBASE_API_KEY}"
+        payload = {"fields": {k: self._to_firestore_value(v) for k, v in doc.items()}}
         try:
-            self._ref(col, uid).create(doc)
-            return True
-        except DatabaseUnavailable:
-            raise
-        except Exception as e:
-            if type(e).__name__ == "AlreadyExists":
-                return False
-            print("Firestore create failed:", repr(e))
-            raise DatabaseUnavailable from e
+            res = requests.post(url, json=payload, timeout=10)
+            return res.status_code == 200
+        except Exception:
+            raise DatabaseUnavailable
 
     def update_doc(self, col, uid, fields):
+        current = self.get_doc(col, uid)
+        if current is None:
+            return False
+        for path, value in fields.items():
+            target = current
+            *parents, last = path.split(".")
+            for part in parents:
+                target = target.setdefault(part, {})
+            target[last] = value
+        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
+        payload = {"fields": {k: self._to_firestore_value(v) for k, v in current.items()}}
         try:
-            self._ref(col, uid).update(fields)      # dotted keys like "data.appointments" are supported
-            return True
-        except DatabaseUnavailable:
-            raise
-        except Exception as e:
-            if type(e).__name__ == "NotFound":
-                return False
-            print("Firestore update failed:", repr(e))
-            raise DatabaseUnavailable from e
+            res = requests.patch(url, json=payload, timeout=10)
+            return res.status_code == 200
+        except Exception:
+            raise DatabaseUnavailable
 
     def delete_doc(self, col, uid):
+        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
         try:
-            self._ref(col, uid).delete()
-        except DatabaseUnavailable:
-            raise
-        except Exception as e:
-            print("Firestore delete failed:", repr(e))
-            raise DatabaseUnavailable from e
+            requests.delete(url, timeout=10)
+        except Exception:
+            raise DatabaseUnavailable
+
 
 class Store:
     def __init__(self, backend):
@@ -209,7 +225,6 @@ if not secret:
     secret = secrets.token_hex(32)
 
 app.config.update(
-    PROPAGATE_EXCEPTIONS=False,
     SECRET_KEY=secret,
     SESSION_COOKIE_NAME="medic_care_session",
     SESSION_COOKIE_HTTPONLY=True,
@@ -356,9 +371,7 @@ def too_large(_):
     return fail("too_large", 413)
 
 @app.errorhandler(500)
-def server_error(error):
-    app.logger.error("Unhandled error on %s %s", request.method, request.path,
-                     exc_info=getattr(error, "original_exception", None) or error)
+def server_error(_):
     return fail("server_error", 500)
 
 @app.errorhandler(DatabaseUnavailable)
@@ -428,27 +441,41 @@ def verify():
     key = f"{request.remote_addr}|{login_id}"
     if login_limiter.blocked(key):
         return fail(reason="too_many", status=429)
-    uid = uid_for(login_id)
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+    payload = {
+        "email": login_id,
+        "password": password,
+        "returnSecureToken": True
+    }
     try:
-        doc = store.get(uid)
-    except DatabaseUnavailable:
-        return fail("database_unavailable", 503)
-    if doc is None:
-        login_limiter.hit(key)
-        return fail(reason="not_found", status=404)
-    if not check_password_hash(doc.get("password_hash", ""), password):
-        login_limiter.hit(key)
-        return fail(reason="bad", status=401)
-    login_limiter.reset(key)
-    if LOGIN_EMAIL_VERIFICATION:
-        th, error = issue_login_link(uid, login_id)
-        if error:
-            session.pop("verified", None)
-            return fail(error, 503 if error == "email_unavailable" else 429)
-        session["verified"] = {"uid": uid, "t": time.time(), "th": th}
-        return jsonify(ok=True, id=login_id, needs_email=True, email=mask_email(login_id))
-    session["verified"] = {"uid": uid, "t": time.time()}
-    return jsonify(ok=True, id=login_id, needs_email=False)
+        response = requests.post(url, json=payload, timeout=10)
+        res_data = response.json()
+        if response.status_code == 200:
+            login_limiter.reset(key)
+            uid = res_data['localId']
+            if LOGIN_EMAIL_VERIFICATION:
+                th, error = issue_login_link(uid, login_id)
+                if error:
+                    session.pop("verified", None)
+                    return fail(error, 503 if error == "email_unavailable" else 429)
+                session["verified"] = {"uid": uid, "t": time.time(), "th": th}
+                return jsonify(ok=True, id=login_id, needs_email=True, email=mask_email(login_id))
+            session["verified"] = {"uid": uid, "t": time.time()}
+            return jsonify(ok=True, id=login_id, needs_email=False)
+        else:
+            login_limiter.hit(key)
+            res_data = response.json()
+            error_msg = res_data.get('error', {}).get('message', '')
+            
+            if "EMAIL_NOT_FOUND" in error_msg:
+                return fail(error="No account found. Please create an account.", status=404)
+            elif "INVALID_PASSWORD" in error_msg:
+                return fail(error="Incorrect password. Please try again.", status=401)
+            else:
+                return fail(error="Login failed. Please check your credentials.", status=400)
+
+    except Exception as e:
+        return fail(str(e), 500)
 
 
 @app.post("/api/login")
