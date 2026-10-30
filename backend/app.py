@@ -25,8 +25,8 @@ def env_flag(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "")
-FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "")
+FIREBASE_PROJECT_ID = ("medic-care-10", "")
+FIREBASE_API_KEY = ("AIzaSyDnpYP-ZIBrNZ5RQMXJUPswIQjFhu-RMjk", "")
 USERS_COLLECTION = os.getenv("USERS_COLLECTION", "users")
 RESETS_COLLECTION = os.getenv("RESETS_COLLECTION", "password_resets")
 CHALLENGES_COLLECTION = os.getenv("CHALLENGES_COLLECTION", "login_challenges")
@@ -75,7 +75,7 @@ class MemoryStore:
 
 class FirestoreStore:
     def __init__(self):
-        self._base_url = f"https://googleapis.com/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
+        firebase_auth_url = f"https://googleapis.com/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 
     def _to_firestore_value(self, val):
         if val is None:
