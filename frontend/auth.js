@@ -150,17 +150,17 @@
         const r = call("POST", "/verify", { id: raw, password: pw });
 
         if (r.data && r.data.ok) {
-            // needsEmail: the server e-mailed a confirmation link; the login finishes only after it is opened
             return { ok: true, id: r.data.id, needsEmail: !!r.data.needs_email, email: r.data.email || "" };
         }
 
         return {
             ok: false,
-            reason: (r.data && (r.data.reason || r.data.error)) ||
+            reason: (r.data && r.data.error) || (r.data && r.data.reason) ||
                 (r.status === 0 ? "network" :
                     !r.json ? "server_required" : "error")
         };
     }
+
 
     // Asks (without freezing the page) whether the e-mailed login link has been opened yet.
     function loginStatus(cb) {
