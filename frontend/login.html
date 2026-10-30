@@ -602,6 +602,9 @@
         } else if (check.reason === "too_many") {
           setError("pw", "pwMsg", "err.tooMany");
           byId("pw").focus();
+        } else if (check.reason === "auth_unavailable" || check.reason === "firebase_not_configured") {
+          setError("pw", "pwMsg", "err.server");
+          byId("pw").focus();
         } else if (check.reason === "bad") {
           setError("pw", "pwMsg", "log.err.bad");
           byId("pw").focus();

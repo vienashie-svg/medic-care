@@ -10,8 +10,15 @@ from datetime import timedelta
 from pathlib import Path
 
 import requests
+import firebase_admin
+from dotenv import load_dotenv
+from firebase_admin import credentials, firestore
+from google.api_core.exceptions import AlreadyExists, GoogleAPICallError, NotFound
 from flask import Flask, abort, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
+
+
+load_dotenv(Path(__file__).with_name(".env"))
 
 
 class DatabaseUnavailable(Exception):
@@ -25,8 +32,8 @@ def env_flag(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-FIREBASE_PROJECT_ID = "medic-care-10"
-FIREBASE_API_KEY = "AIzaSyDnpYP-ZIBrNZ5RQMXJUPswIQjFhu-RMjk"
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "").strip()
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "").strip()
 USERS_COLLECTION = os.getenv("USERS_COLLECTION", "users")
 RESETS_COLLECTION = os.getenv("RESETS_COLLECTION", "password_resets")
 CHALLENGES_COLLECTION = os.getenv("CHALLENGES_COLLECTION", "login_challenges")
@@ -48,6 +55,11 @@ class MemoryStore:
     def __init__(self):
         self._lock = threading.RLock()
         self._docs = {}
+
+    def get_doc(self, col, uid):
+        with self._lock:
+            doc = self._docs.get((col, uid))
+            return copy.deepcopy(doc) if doc is not None else None
 
     def create_doc(self, col, uid, doc):
         with self._lock:
@@ -75,101 +87,63 @@ class MemoryStore:
 
 class FirestoreStore:
     def __init__(self):
-        self._base_url = f"https://googleapis.com/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
+        if not re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", FIREBASE_PROJECT_ID):
+            raise RuntimeError(
+                "FIREBASE_PROJECT_ID must be the Firebase project ID, not its API key"
+            )
+        try:
+            firebase_app = firebase_admin.get_app()
+        except ValueError:
+            credential_value = os.getenv("FIREBASE_CREDENTIALS_JSON", "").strip()
+            if not credential_value:
+                credential_value = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
+            if not credential_value:
+                raise RuntimeError(
+                    "Set FIREBASE_CREDENTIALS_JSON to a service-account JSON value or file path"
+                )
 
-    def _to_firestore_value(self, val):
-        if val is None:
-            return {"nullValue": None}
-        if isinstance(val, bool):
-            return {"booleanValue": val}
-        if isinstance(val, int):
-            return {"integerValue": str(val)}
-        if isinstance(val, float):
-            return {"doubleValue": val}
-        if isinstance(val, str):
-            return {"stringValue": val}
-        if isinstance(val, dict):
-            return {"mapValue": {"fields": {str(k): self._to_firestore_value(v) for k, v in val.items()}}}
-        if isinstance(val, (list, tuple, set)):
-            return {"arrayValue": {"values": [self._to_firestore_value(v) for v in val]}}
-        return {"stringValue": str(val)}
-
-    def _from_firestore_value(self, f_val):
-        if not isinstance(f_val, dict) or not f_val:
-            return f_val
-        k = next(iter(f_val))
-        v = f_val[k]
-        if k == "nullValue":
-            return None
-        if k == "booleanValue":
-            return bool(v)
-        if k == "integerValue":
-            return int(v)
-        if k == "doubleValue":
-            return float(v)
-        if k in ("stringValue", "timestampValue"):
-            return str(v)
-        if k == "mapValue":
-            return {fk: self._from_firestore_value(fv) for fk, fv in v.get("fields", {}).items()}
-        if k == "arrayValue":
-            return [self._from_firestore_value(i) for i in v.get("values", [])]
-        return v
+            if credential_value.startswith("{"):
+                credential = credentials.Certificate(json.loads(credential_value))
+            else:
+                credential_path = Path(credential_value)
+                if not credential_path.is_absolute() and not credential_path.is_file():
+                    credential_path = Path(__file__).resolve().parent / credential_path
+                credential = credentials.Certificate(str(credential_path))
+            firebase_app = firebase_admin.initialize_app(
+                credential, {"projectId": FIREBASE_PROJECT_ID}
+            )
+        self._db = firestore.client(app=firebase_app)
 
     def get_doc(self, col, uid):
-        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
         try:
-            res = requests.get(url, timeout=10)
-            if res.status_code == 200:
-                fields = res.json().get("fields", {})
-                return {k: self._from_firestore_value(v) for k, v in fields.items()}
-            elif res.status_code == 404:
-                return None
-            raise DatabaseUnavailable
-        except Exception:
-            raise DatabaseUnavailable
+            snapshot = self._db.collection(col).document(uid).get()
+            return snapshot.to_dict() if snapshot.exists else None
+        except GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
 
     def create_doc(self, col, uid, doc):
-        # Siguraduhing tama ang pagkakabuo ng path
-        url = f"{self._base_url}/{col}?documentId={uid}&key={FIREBASE_API_KEY}"
-        payload = {"fields": {k: self._to_firestore_value(v) for k, v in doc.items()}}
         try:
-            # Idagdag ang json header para malaman ni Google na JSON ang pinapadala mo
-            headers = {"Content-Type": "application/json"}
-            res = requests.post(url, json=payload, headers=headers, timeout=10)
-            
-            if res.status_code not in (200, 201):
-                print(f"Firestore Error Context: {res.status_code} - {res.text}")
-                return False
+            self._db.collection(col).document(uid).create(doc)
             return True
-        except Exception as e:
-            print(f"Connection Exception: {str(e)}")
-            raise DatabaseUnavailable
-
+        except AlreadyExists:
+            return False
+        except GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
 
     def update_doc(self, col, uid, fields):
-        current = self.get_doc(col, uid)
-        if current is None:
-            return False
-        for path, value in fields.items():
-            target = current
-            *parents, last = path.split(".")
-            for part in parents:
-                target = target.setdefault(part, {})
-            target[last] = value
-        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
-        payload = {"fields": {k: self._to_firestore_value(v) for k, v in current.items()}}
         try:
-            res = requests.patch(url, json=payload, timeout=10)
-            return res.status_code == 200
-        except Exception:
-            raise DatabaseUnavailable
+            self._db.collection(col).document(uid).update(fields)
+            return True
+        except NotFound:
+            return False
+        except GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
 
     def delete_doc(self, col, uid):
-        url = f"{self._base_url}/{col}/{uid}?key={FIREBASE_API_KEY}"
         try:
-            requests.delete(url, timeout=10)
-        except Exception:
-            raise DatabaseUnavailable
+            self._db.collection(col).document(uid).delete()
+        except GoogleAPICallError as error:
+            raise DatabaseUnavailable from error
 
 
 class Store:
@@ -409,7 +383,10 @@ def signup():
         
     signup_limiter.hit(ip)
 
-    firebase_auth_url = f"https://googleapis.com{FIREBASE_API_KEY}"
+    if not FIREBASE_API_KEY:
+        return fail("firebase_not_configured", 503)
+
+    firebase_auth_url = "https://identitytoolkit.googleapis.com/v1/accounts:signUp"
     auth_payload = {
         "email": login_id,
         "password": password,
@@ -417,39 +394,54 @@ def signup():
     }
     
     try:
-        auth_res = requests.post(firebase_auth_url, json=auth_payload, timeout=10)
+        auth_res = requests.post(
+            firebase_auth_url,
+            params={"key": FIREBASE_API_KEY},
+            json=auth_payload,
+            timeout=10,
+        )
         auth_data = auth_res.json()
-        
-        if auth_res.status_code != 200:
-            error_msg = auth_data.get('error', {}).get('message', '')
-            if "EMAIL_EXISTS" in error_msg:
-                return fail("An account with this email already exists.", 409)
-            return fail(f"Auth signup failed: {error_msg}", 400)
-            
-        firebase_uid = auth_data['localId']
-        
-        doc = {
-            "id": login_id,
-            "password_hash": generate_password_hash(password), 
-            "profile": {
-                "name": name,
-                "email": login_id,
-                "phone": "",
-                "code": "+63",
-            },
-            "data": {},
-            "created_at": int(time.time()),
-        }
-        
-        if not store.create(firebase_uid, doc):
+    except requests.RequestException:
+        return fail("auth_unavailable", 503)
+    except ValueError:
+        return fail("auth_unavailable", 503)
+
+    if not isinstance(auth_data, dict):
+        return fail("auth_unavailable", 503)
+
+    if auth_res.status_code != 200:
+        error_msg = auth_data.get("error", {}).get("message", "")
+        if "EMAIL_EXISTS" in error_msg:
             return fail("exists", 409)
-            
-        return jsonify(ok=True, id=login_id), 201
+        if "INVALID_EMAIL" in error_msg:
+            return fail("invalid_id", 400)
+        if "WEAK_PASSWORD" in error_msg:
+            return fail("weak_password", 400)
+        if error_msg in {"API_KEY_INVALID", "OPERATION_NOT_ALLOWED", "CONFIGURATION_NOT_FOUND"}:
+            return fail("firebase_not_configured", 503)
+        return fail("signup_failed", 400)
+
+    firebase_uid = auth_data.get("localId")
+    if not firebase_uid:
+        return fail("auth_unavailable", 503)
         
-    except DatabaseUnavailable:
-        return fail("database_unavailable", 503)
-    except Exception as e:
-        return fail(str(e), 500)
+    doc = {
+        "id": login_id,
+        "password_hash": generate_password_hash(password),
+        "profile": {
+            "name": name,
+            "email": login_id,
+            "phone": "",
+            "code": "+63",
+        },
+        "data": {},
+        "created_at": int(time.time()),
+    }
+        
+    if not store.create(firebase_uid, doc):
+        return fail("exists", 409)
+            
+    return jsonify(ok=True, id=login_id), 201
 
 
 @app.post("/api/verify")
@@ -462,41 +454,54 @@ def verify():
     key = f"{request.remote_addr}|{login_id}"
     if login_limiter.blocked(key):
         return fail(reason="too_many", status=429)
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+    if not FIREBASE_API_KEY:
+        return fail("firebase_not_configured", 503)
+
+    url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
     payload = {
         "email": login_id,
         "password": password,
         "returnSecureToken": True
     }
     try:
-        response = requests.post(url, json=payload, timeout=10)
+        response = requests.post(
+            url, params={"key": FIREBASE_API_KEY}, json=payload, timeout=10
+        )
         res_data = response.json()
-        if response.status_code == 200:
-            login_limiter.reset(key)
-            uid = res_data['localId']
-            if LOGIN_EMAIL_VERIFICATION:
-                th, error = issue_login_link(uid, login_id)
-                if error:
-                    session.pop("verified", None)
-                    return fail(error, 503 if error == "email_unavailable" else 429)
-                session["verified"] = {"uid": uid, "t": time.time(), "th": th}
-                return jsonify(ok=True, id=login_id, needs_email=True, email=mask_email(login_id))
-            session["verified"] = {"uid": uid, "t": time.time()}
-            return jsonify(ok=True, id=login_id, needs_email=False)
-        else:
-            login_limiter.hit(key)
-            res_data = response.json()
-            error_msg = res_data.get('error', {}).get('message', '')
-            
-            if "EMAIL_NOT_FOUND" in error_msg:
-                return fail(error="No account found. Please create an account.", status=404)
-            elif "INVALID_PASSWORD" in error_msg:
-                return fail(error="Incorrect password. Please try again.", status=401)
-            else:
-                return fail(error="Login failed. Please check your credentials.", status=400)
+    except requests.RequestException:
+        return fail("auth_unavailable", 503)
+    except ValueError:
+        return fail("auth_unavailable", 503)
 
-    except Exception as e:
-        return fail(str(e), 500)
+    if not isinstance(res_data, dict):
+        return fail("auth_unavailable", 503)
+
+    if response.status_code == 200:
+        login_limiter.reset(key)
+        uid = res_data.get("localId")
+        if not uid:
+            return fail("auth_unavailable", 503)
+        if LOGIN_EMAIL_VERIFICATION:
+            th, error = issue_login_link(uid, login_id)
+            if error:
+                session.pop("verified", None)
+                return fail(error, 503 if error == "email_unavailable" else 429)
+            session["verified"] = {"uid": uid, "t": time.time(), "th": th}
+            return jsonify(ok=True, id=login_id, needs_email=True, email=mask_email(login_id))
+        session["verified"] = {"uid": uid, "t": time.time()}
+        return jsonify(ok=True, id=login_id, needs_email=False)
+
+    login_limiter.hit(key)
+    error_msg = res_data.get("error", {}).get("message", "")
+    if "EMAIL_NOT_FOUND" in error_msg or "USER_NOT_FOUND" in error_msg:
+        return fail("not_found", 404)
+    if "INVALID_PASSWORD" in error_msg or "INVALID_LOGIN_CREDENTIALS" in error_msg:
+        return fail("bad", 401)
+    if "TOO_MANY_ATTEMPTS" in error_msg:
+        return fail("too_many", 429)
+    if error_msg in {"API_KEY_INVALID", "OPERATION_NOT_ALLOWED", "CONFIGURATION_NOT_FOUND"}:
+        return fail("firebase_not_configured", 503)
+    return fail("auth_unavailable", 503)
 
 
 @app.post("/api/login")
@@ -516,12 +521,13 @@ def login():
         if not challenge.get("confirmed"):
             return fail("email_not_confirmed", 401)
         store.delete_challenge(th)
-    asked = normalize(body().get("id"))
-    if asked and uid_for(asked) != uid:
-        return fail("not_verified", 403)
-    if store.get(uid) is None:
+    doc = store.get(uid)
+    if doc is None:
         session.clear()
         return fail("not_found", 404)
+    asked = normalize(body().get("id"))
+    if asked and asked != normalize(doc.get("id")):
+        return fail("not_verified", 403)
     session.clear()
     session["uid"] = uid
     session.permanent = True

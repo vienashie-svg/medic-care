@@ -245,6 +245,14 @@ const LOCAL = {
     "err.database": {
         en: "Account creation is temporarily unavailable. The server's Firebase database credentials need to be checked.",
         fil: "Pansamantalang hindi makagawa ng account. Kailangang suriin ang Firebase database credentials ng server."
+    },
+    "err.auth": {
+        en: "The sign-up service could not be reached. Please try again shortly.",
+        fil: "Hindi maabot ang serbisyo ng pagpaparehistro. Subukan muli mamaya."
+    },
+    "err.firebase": {
+        en: "The server's Firebase configuration is incomplete. Please contact the site administrator.",
+        fil: "Hindi kumpleto ang Firebase configuration ng server. Makipag-ugnayan sa administrator."
     }
 };
 
@@ -307,7 +315,9 @@ const serverErrors = {
     weak_password: ["pw", "sig.err.len"],
     network: ["id", "err.network"],
     server_required: ["id", "err.server"],
-    database_unavailable: ["id", "err.database"]
+    database_unavailable: ["id", "err.database"],
+    auth_unavailable: ["id", "err.auth"],
+    firebase_not_configured: ["id", "err.firebase"]
 };
 
 byId("signupForm").addEventListener("submit", (e) => {
