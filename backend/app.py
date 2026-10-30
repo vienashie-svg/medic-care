@@ -75,7 +75,7 @@ class MemoryStore:
 
 class FirestoreStore:
     def __init__(self):
-        self._base_url = f"https://googleapis.com{FIREBASE_PROJECT_ID}/databases/(default)/documents"
+        self._base_url = f"https://googleapis.com/firestore/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 
     def _to_firestore_value(self, val):
         if val is None:
