@@ -9,60 +9,45 @@ import time
 from datetime import timedelta
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, request, send_from_directory, session 
-from werkzeug.security import check_password_hash, generate_password_hash 
 import requests
+from flask import Flask, abort, jsonify, request, send_from_directory, session
+from werkzeug.security import check_password_hash, generate_password_hash
 
-try:                                    
-    from dotenv import load_dotenv 
-    load_dotenv(Path(__file__).resolve().parent / ".env")
-except ImportError:
-    pass
-
-BASE_DIR = Path(__file__).resolve().parent
-FRONTEND_DIR = Path(os.getenv("FRONTEND_DIR", BASE_DIR.parent / "frontend")).resolve()
-
-USERS_COLLECTION = os.getenv("FIRESTORE_USERS_COLLECTION", "users")
-RESETS_COLLECTION = "password_resets"
-SLOTS_COLLECTION = "appointment_slots"
-RESET_TOKEN_MINUTES = 30
-CHALLENGES_COLLECTION = "login_challenges"
-LOGIN_LINK_MINUTES = 10
-
-SESSION_DAYS: int = 7
-VERIFY_WINDOW: int = 300          
-MAX_PHOTO_CHARS: int = 600_000    
-MAX_DATA_BYTES: int = 300_000     
-MAX_APPOINTMENTS: int = 500
-APPOINTMENT_STATUSES = {"pending", "confirmed", "cancelled", "completed"}
-
-ALLOWED_DATA = {"appointments": list, "profileExtra": dict}
-
-STATIC_EXTENSIONS = {
-    ".html", ".js", ".css", ".png", ".jpg", ".jpeg", ".gif",
-    ".svg", ".webp", ".ico", ".woff", ".woff2",
-}
-
-EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
-
-FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "AIzaSyDnpYP-ZIBrNZ5RQMXJUPswIQjFhu-RMjk")
-FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "medic-care-10")
-
-def env_flag(name, default=False):
-    return os.getenv(name, "1" if default else "0").strip().lower() in ("1", "true", "yes", "on")
 
 class DatabaseUnavailable(Exception):
     pass
 
+
+def env_flag(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "")
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "")
+USERS_COLLECTION = os.getenv("USERS_COLLECTION", "users")
+RESETS_COLLECTION = os.getenv("RESETS_COLLECTION", "password_resets")
+CHALLENGES_COLLECTION = os.getenv("CHALLENGES_COLLECTION", "login_challenges")
+SLOTS_COLLECTION = os.getenv("SLOTS_COLLECTION", "appointment_slots")
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+APPOINTMENT_STATUSES = {"pending", "confirmed", "cancelled", "completed"}
+ALLOWED_DATA = {"appointments": list}
+MAX_APPOINTMENTS = 500
+MAX_DATA_BYTES = 1_000_000
+SESSION_DAYS = 30
+VERIFY_WINDOW = 600
+LOGIN_LINK_MINUTES = 15
+RESET_TOKEN_MINUTES = 30
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+STATIC_EXTENSIONS = {".html", ".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp"}
+
+
 class MemoryStore:
     def __init__(self):
-        self._docs = {}                      
-        self._lock = threading.Lock()
-
-    def get_doc(self, col, uid):
-        with self._lock:
-            doc = self._docs.get((col, uid))
-            return copy.deepcopy(doc) if doc is not None else None
+        self._lock = threading.RLock()
+        self._docs = {}
 
     def create_doc(self, col, uid, doc):
         with self._lock:
@@ -76,7 +61,7 @@ class MemoryStore:
             doc = self._docs.get((col, uid))
             if doc is None:
                 return False
-            for path, value in fields.items():           
+            for path, value in fields.items():
                 target = doc
                 *parents, last = path.split(".")
                 for part in parents:
@@ -396,7 +381,7 @@ def me():
 
 @app.post("/api/signup")
 def signup():
-    ip = request.remote_addr or "?"
+    ip = request.remote_addr or "unknown"
     if signup_limiter.blocked(ip):
         return fail("too_many", 429)
     data = body()
@@ -421,15 +406,14 @@ def signup():
             "code": "+63",
         },
         "data": {},
-        "created_at": time.time(),
+        "created_at": int(time.time()),
     }
     try:
-        created = store.create(uid_for(login_id), doc)
+        if not store.create(uid_for(login_id), doc):
+            return fail("exists", 409)
+        return jsonify(ok=True, id=login_id), 201
     except DatabaseUnavailable:
         return fail("database_unavailable", 503)
-    if not created:
-        return fail("exists", 409)
-    return jsonify(ok=True, id=login_id), 201
 
 @app.post("/api/verify")
 def verify():
