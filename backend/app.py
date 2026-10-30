@@ -130,28 +130,26 @@ class FirestoreStore:
             raise DatabaseUnavailable from e
 
     def create_doc(self, col, uid, doc):
-        from google.api_core.exceptions import AlreadyExists
         try:
             self._ref(col, uid).create(doc)
             return True
-        except AlreadyExists:
-            return False
         except DatabaseUnavailable:
             raise
         except Exception as e:
+            if type(e).__name__ == "AlreadyExists":
+                return False
             print("Firestore create failed:", repr(e))
             raise DatabaseUnavailable from e
 
     def update_doc(self, col, uid, fields):
-        from google.api_core.exceptions import NotFound
         try:
             self._ref(col, uid).update(fields)      # dotted keys like "data.appointments" are supported
             return True
-        except NotFound:
-            return False
         except DatabaseUnavailable:
             raise
         except Exception as e:
+            if type(e).__name__ == "NotFound":
+                return False
             print("Firestore update failed:", repr(e))
             raise DatabaseUnavailable from e
 
@@ -211,6 +209,7 @@ if not secret:
     secret = secrets.token_hex(32)
 
 app.config.update(
+    PROPAGATE_EXCEPTIONS=False,
     SECRET_KEY=secret,
     SESSION_COOKIE_NAME="medic_care_session",
     SESSION_COOKIE_HTTPONLY=True,
@@ -357,7 +356,9 @@ def too_large(_):
     return fail("too_large", 413)
 
 @app.errorhandler(500)
-def server_error(_):
+def server_error(error):
+    app.logger.error("Unhandled error on %s %s", request.method, request.path,
+                     exc_info=getattr(error, "original_exception", None) or error)
     return fail("server_error", 500)
 
 @app.errorhandler(DatabaseUnavailable)
