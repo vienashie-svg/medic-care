@@ -468,10 +468,16 @@ def verify():
             return jsonify(ok=True, id=login_id, needs_email=False)
         else:
             login_limiter.hit(key)
-            error_msg = res_data.get('error', {}).get('message', 'Login failed')
+            res_data = response.json()
+            error_msg = res_data.get('error', {}).get('message', '')
+            
             if "EMAIL_NOT_FOUND" in error_msg:
-                return fail(reason="not_found", status=404)
-            return fail(reason="bad", status=401)
+                return fail(error="No account found. Please create an account.", status=404)
+            elif "INVALID_PASSWORD" in error_msg:
+                return fail(error="Incorrect password. Please try again.", status=401)
+            else:
+                return fail(error="Login failed. Please check your credentials.", status=400)
+
     except Exception as e:
         return fail(str(e), 500)
 
