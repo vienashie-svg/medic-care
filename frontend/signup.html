@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en" data-guest-only>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,11 +22,13 @@
         body {
             font-family: Arial, Helvetica, sans-serif;
             min-height: 100vh;
-            background: linear-gradient(to bottom,
-                    #ffffff 0%,
-                    #edf4fd 35%,
-                    #d5e5fa 70%,
-                    #bdd5f3 100%);
+            background: linear-gradient(
+                to bottom,
+                #ffffff 0%,
+                #edf4fd 35%,
+                #d5e5fa 70%,
+                #bdd5f3 100%
+            );
             color: #111827;
         }
 
@@ -144,7 +145,6 @@
         }
     </style>
 </head>
-
 <body>
 
     <main class="signup-container">
@@ -154,34 +154,56 @@
 
             <div class="form-group">
                 <label for="fullName" data-i18n="prof.name">Full Name</label>
-                <input type="text" id="fullName" name="fullName" placeholder="Enter your full name"
-                    data-i18n-ph="prof.ph.name" autocomplete="name" maxlength="200" required>
+                <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    placeholder="Enter your full name" data-i18n-ph="prof.ph.name"
+                    autocomplete="name"
+                    maxlength="200"
+                    required
+                >
                 <div class="msg" id="nameMsg"></div>
             </div>
 
             <div class="form-group">
                 <label for="email" data-i18n="sig.id">Email</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email address" autocomplete="off">
-                    data-i18n-ph="sig.id.ph" autocomplete="username" required>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email address" data-i18n-ph="sig.id.ph"
+                    autocomplete="username"
+                    required
+                >
                 <div class="msg" id="idMsg"></div>
             </div>
 
-            <div class="form-group" style="position: relative; margin-bottom: 20px;">
-                <label for="password" style="display: block; margin-bottom: 5px;">Password</label>
-                <input type="password" id="password" placeholder="Password" autocomplete="new-password">
-                    style="width: 100%; padding-right: 40px; box-sizing: border-box;">
-                <i class="toggle-password fas fa-eye" onclick="toggleSignupPassword('password', this)"
-                    style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: #777;"></i>
+            <div class="form-group">
+                <label for="password" data-i18n="sig.pw">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Create your password" data-i18n-ph="sig.pw.ph"
+                    autocomplete="new-password"
+                    required
+                >
+                <div class="msg" id="pwMsg"></div>
             </div>
 
-            <div class="form-group" style="position: relative; margin-bottom: 20px;">
-                <label for="confirm-password" style="display: block; margin-bottom: 5px;">Confirm Password</label>
-                <input type="password" id="confirm-password" placeholder="Confirm Password" autocomplete="new-password"
-                    style="width: 100%; padding-right: 40px; box-sizing: border-box;">
-                <i class="toggle-password fas fa-eye" onclick="toggleSignupPassword('confirm-password', this)"
-                    style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: #777;"></i>
+            <div class="form-group">
+                <label for="confirmPassword" data-i18n="sig.cf">Confirm Password</label>
+                <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Confirm your password" data-i18n-ph="sig.cf.ph"
+                    autocomplete="new-password"
+                    required
+                >
+                <div class="msg" id="cfMsg"></div>
             </div>
-
 
             <button type="submit" class="create-button" id="submitBtn" data-i18n="sig.btn">
                 Create Account
@@ -195,153 +217,152 @@
     </main>
 
     <script>
-        /* Sign up page. Needs auth.js and languages.js loaded first. */
+/* Sign up page. Needs auth.js and languages.js loaded first. */
 
-        const byId = (id) => document.getElementById(id);
+const byId = (id) => document.getElementById(id);
 
-        const fields = {
-            name: ["fullName", "nameMsg"],
-            id: ["email", "idMsg"],
-            pw: ["password", "pwMsg"],
-            cf: ["confirmPassword", "cfMsg"]
-        };
+const fields = {
+    name: ["fullName", "nameMsg"],
+    id: ["email", "idMsg"],
+    pw: ["password", "pwMsg"],
+    cf: ["confirmPassword", "cfMsg"]
+};
 
-        /* ===== Text that has no entry in languages.js yet ===== */
-        const LOCAL = {
-            "err.server": {
-                en: "Open the app through its backend server: run `python backend/app.py`, then visit http://127.0.0.1:5000/signup.html.",
-                fil: "Buksan ang app sa backend server: patakbuhin ang `python backend/app.py`, saka pumunta sa http://127.0.0.1:5000/signup.html."
-            },
-            "err.fail": {
-                en: "Unable to create your account. Please try again.",
-                fil: "Hindi magawa ang iyong account. Subukan muli."
-            },
-            "err.network": {
-                en: "Can't reach the server. Check your connection and try again.",
-                fil: "Hindi makakonekta sa server. Suriin ang iyong koneksyon at subukan muli."
-            },
-            "err.database": {
-                en: "Account creation is temporarily unavailable. The server's Firebase database credentials need to be checked.",
-                fil: "Pansamantalang hindi makagawa ng account. Kailangang suriin ang Firebase database credentials ng server."
-            },
-            "err.auth": {
-                en: "The sign-up service could not be reached. Please try again shortly.",
-                fil: "Hindi maabot ang serbisyo ng pagpaparehistro. Subukan muli mamaya."
-            },
-            "err.firebase": {
-                en: "The server's Firebase configuration is incomplete. Please contact the site administrator.",
-                fil: "Hindi kumpleto ang Firebase configuration ng server. Makipag-ugnayan sa administrator."
-            }
-        };
+/* ===== Text that has no entry in languages.js yet ===== */
+const LOCAL = {
+    "err.server": {
+        en: "Open the app through its backend server: run `python backend/app.py`, then visit http://127.0.0.1:5000/signup.html.",
+        fil: "Buksan ang app sa backend server: patakbuhin ang `python backend/app.py`, saka pumunta sa http://127.0.0.1:5000/signup.html."
+    },
+    "err.fail": {
+        en: "Unable to create your account. Please try again.",
+        fil: "Hindi magawa ang iyong account. Subukan muli."
+    },
+    "err.network": {
+        en: "Can't reach the server. Check your connection and try again.",
+        fil: "Hindi makakonekta sa server. Suriin ang iyong koneksyon at subukan muli."
+    },
+    "err.database": {
+        en: "Account creation is temporarily unavailable. The server's Firebase database credentials need to be checked.",
+        fil: "Pansamantalang hindi makagawa ng account. Kailangang suriin ang Firebase database credentials ng server."
+    },
+    "err.auth": {
+        en: "The sign-up service could not be reached. Please try again shortly.",
+        fil: "Hindi maabot ang serbisyo ng pagpaparehistro. Subukan muli mamaya."
+    },
+    "err.firebase": {
+        en: "The server's Firebase configuration is incomplete. Please contact the site administrator.",
+        fil: "Hindi kumpleto ang Firebase configuration ng server. Makipag-ugnayan sa administrator."
+    }
+};
 
-        function tr(key) {
-            if (LOCAL[key]) return LOCAL[key][I18N.getLang()] || LOCAL[key].en;
-            return I18N.t(key);
-        }
+function tr(key) {
+    if (LOCAL[key]) return LOCAL[key][I18N.getLang()] || LOCAL[key].en;
+    return I18N.t(key);
+}
 
-        /* ===== Error helpers (errors are stored as translation keys) ===== */
-        const errs = {}; // field key -> translation key
+/* ===== Error helpers (errors are stored as translation keys) ===== */
+const errs = {}; // field key -> translation key
 
-        function setErr(key, msgKey) {
-            const [inputId, msgId] = fields[key];
-            errs[key] = msgKey || null;
-            byId(msgId).textContent = msgKey ? tr(msgKey) : "";
-            byId(inputId).classList.toggle("invalid", !!msgKey);
-        }
+function setErr(key, msgKey) {
+    const [inputId, msgId] = fields[key];
+    errs[key] = msgKey || null;
+    byId(msgId).textContent = msgKey ? tr(msgKey) : "";
+    byId(inputId).classList.toggle("invalid", !!msgKey);
+}
 
-        function clearAll() {
-            Object.keys(fields).forEach((key) => setErr(key, ""));
-        }
+function clearAll() {
+    Object.keys(fields).forEach((key) => setErr(key, ""));
+}
 
-        function repaintErrors() {
-            Object.keys(errs).forEach((key) => {
-                if (errs[key]) byId(fields[key][1]).textContent = tr(errs[key]);
-            });
-        }
+function repaintErrors() {
+    Object.keys(errs).forEach((key) => {
+        if (errs[key]) byId(fields[key][1]).textContent = tr(errs[key]);
+    });
+}
 
-        // Clear only the error of the field being edited
-        Object.keys(fields).forEach((key) => {
-            byId(fields[key][0]).addEventListener("input", () => setErr(key, ""));
-        });
+// Clear only the error of the field being edited
+Object.keys(fields).forEach((key) => {
+    byId(fields[key][0]).addEventListener("input", () => setErr(key, ""));
+});
 
-        // Re-render error messages when the language changes
-        window.addEventListener("langchange", repaintErrors);
+// Re-render error messages when the language changes
+window.addEventListener("langchange", repaintErrors);
 
-        /* ===== Validation (each returns a translation key, or "" if OK) ===== */
-        // The 200-character name limit is already enforced by maxlength on the input.
-        function validateName(name) {
-            return name ? "" : "prof.err.name";
-        }
+/* ===== Validation (each returns a translation key, or "" if OK) ===== */
+// The 200-character name limit is already enforced by maxlength on the input.
+function validateName(name) {
+    return name ? "" : "prof.err.name";
+}
 
-        function validatePassword(pw) {
-            if (pw.length < 8) return "sig.err.len";
-            if (!/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return "sig.err.mix";
-            return "";
-        }
+function validatePassword(pw) {
+    if (pw.length < 8) return "sig.err.len";
+    if (!/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return "sig.err.mix";
+    return "";
+}
 
-        function validateConfirm(pw, cf) {
-            if (!cf) return "sig.err.cf";
-            if (pw !== cf) return "sig.err.match";
-            return "";
-        }
+function validateConfirm(pw, cf) {
+    if (!cf) return "sig.err.cf";
+    if (pw !== cf) return "sig.err.match";
+    return "";
+}
 
-        // Maps Auth.createUser error codes to [field key, translation key]
-        const serverErrors = {
-            exists: ["id", "sig.err.exists"],
-            invalid_name: ["name", "prof.err.name"],
-            invalid_id: ["id", "sig.err.id"],
-            weak_password: ["pw", "sig.err.len"],
-            network: ["id", "err.network"],
-            server_required: ["id", "err.server"],
-            database_unavailable: ["id", "err.database"],
-            auth_unavailable: ["id", "err.auth"],
-            firebase_not_configured: ["id", "err.firebase"]
-        };
+// Maps Auth.createUser error codes to [field key, translation key]
+const serverErrors = {
+    exists: ["id", "sig.err.exists"],
+    invalid_name: ["name", "prof.err.name"],
+    invalid_id: ["id", "sig.err.id"],
+    weak_password: ["pw", "sig.err.len"],
+    network: ["id", "err.network"],
+    server_required: ["id", "err.server"],
+    database_unavailable: ["id", "err.database"],
+    auth_unavailable: ["id", "err.auth"],
+    firebase_not_configured: ["id", "err.firebase"]
+};
 
-        byId("signupForm").addEventListener("submit", (e) => {
-            e.preventDefault();
-            clearAll();
+byId("signupForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    clearAll();
 
-            const name = byId("fullName").value.trim();
-            const raw = byId("email").value.trim();
-            const pw = byId("password").value;
-            const cf = byId("confirmPassword").value;
+    const name = byId("fullName").value.trim();
+    const raw = byId("email").value.trim();
+    const pw = byId("password").value;
+    const cf = byId("confirmPassword").value;
 
-            const errors = {
-                name: validateName(name),
-                id: Auth.validId(raw) ? "" : "sig.err.id",
-                pw: validatePassword(pw),
-                cf: validateConfirm(pw, cf)
-            };
+    const errors = {
+        name: validateName(name),
+        id: Auth.validId(raw) ? "" : "sig.err.id",
+        pw: validatePassword(pw),
+        cf: validateConfirm(pw, cf)
+    };
 
-            // Only show the mismatch error if the password itself is valid
-            if (errors.pw && errors.cf === "sig.err.match") {
-                errors.cf = "";
-            }
+    // Only show the mismatch error if the password itself is valid
+    if (errors.pw && errors.cf === "sig.err.match") {
+        errors.cf = "";
+    }
 
-            let firstInvalid = null;
-            for (const key of Object.keys(fields)) {
-                setErr(key, errors[key]);
-                if (errors[key] && !firstInvalid) firstInvalid = key;
-            }
+    let firstInvalid = null;
+    for (const key of Object.keys(fields)) {
+        setErr(key, errors[key]);
+        if (errors[key] && !firstInvalid) firstInvalid = key;
+    }
 
-            if (firstInvalid) {
-                byId(fields[firstInvalid][0]).focus();
-                return;
-            }
+    if (firstInvalid) {
+        byId(fields[firstInvalid][0]).focus();
+        return;
+    }
 
-            const res = Auth.createUser(Auth.normalize(raw), pw, { name: name });
+    const res = Auth.createUser(Auth.normalize(raw), pw, { name: name });
 
-            if (!res.ok) {
-                const [key, msgKey] = serverErrors[res.error] || ["id", "err.fail"];
-                setErr(key, msgKey);
-                byId(fields[key][0]).focus();
-                return;
-            }
+    if (!res.ok) {
+        const [key, msgKey] = serverErrors[res.error] || ["id", "err.fail"];
+        setErr(key, msgKey);
+        byId(fields[key][0]).focus();
+        return;
+    }
 
-            location.href = "login.html?created=1";
-        });
+    location.href = "login.html?created=1";
+});
     </script>
 </body>
-
 </html>
