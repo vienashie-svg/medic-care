@@ -34,6 +34,8 @@ def env_flag(name, default=False):
 
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "").strip()
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "").strip()
+USE_MEMORY_DB = True
+LOGIN_EMAIL_VERIFICATION = False
 USERS_COLLECTION = os.getenv("USERS_COLLECTION", "users")
 RESETS_COLLECTION = os.getenv("RESETS_COLLECTION", "password_resets")
 CHALLENGES_COLLECTION = os.getenv("CHALLENGES_COLLECTION", "login_challenges")

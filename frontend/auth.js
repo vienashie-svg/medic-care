@@ -532,7 +532,5 @@
         }
     }
     window.toggleSignupPassword = toggleSignupPassword;
-
-
     
 })();
