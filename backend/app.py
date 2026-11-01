@@ -34,7 +34,7 @@ def env_flag(name, default=False):
 
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "").strip()
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "").strip()
-USE_MEMORY_DB = True
+USE_MEMORY_DB = False
 LOGIN_EMAIL_VERIFICATION = False
 USERS_COLLECTION = os.getenv("USERS_COLLECTION", "users")
 RESETS_COLLECTION = os.getenv("RESETS_COLLECTION", "password_resets")
@@ -96,25 +96,30 @@ class FirestoreStore:
         try:
             firebase_app = firebase_admin.get_app()
         except ValueError:
-            credential_value = os.getenv("FIREBASE_CREDENTIALS_JSON", "").strip()
-            if not credential_value:
-                credential_value = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
-            if not credential_value:
-                raise RuntimeError(
-                    "Set FIREBASE_CREDENTIALS_JSON to a service-account JSON value or file path"
-                )
-
-            if credential_value.startswith("{"):
-                credential = credentials.Certificate(json.loads(credential_value))
-            else:
-                credential_path = Path(credential_value)
-                if not credential_path.is_absolute() and not credential_path.is_file():
-                    credential_path = Path(__file__).resolve().parent / credential_path
-                credential = credentials.Certificate(str(credential_path))
+            #  I-PASTE DITO ANG BUONG TEXT NG IYONG FIREBASE SERVICE ACCOUNT JSON FILE
+            # (Ito 'yung mada-download mo mula sa Firebase Console > Project Settings > Service Accounts)
+            credential_json = """
+            {
+              "type": "service_account",
+              "project_id": "medic-care-10",
+              "private_key_id": "...",
+              "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+              "client_email": "...",
+              "client_id": "...",
+              "auth_uri": "https://google.com",
+              "token_uri": "https://googleapis.com",
+              "auth_provider_x509_cert_url": "https://googleapis.com",
+              "client_x509_cert_url": "..."
+            }
+            """
+            
+            import json
+            credential = credentials.Certificate(json.loads(credential_json))
             firebase_app = firebase_admin.initialize_app(
                 credential, {"projectId": FIREBASE_PROJECT_ID}
             )
         self._db = firestore.client(app=firebase_app)
+
 
     def get_doc(self, col, uid):
         try:

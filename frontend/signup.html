@@ -222,7 +222,7 @@
 </div>
 
 
-            <button type="submit" class="create-button" id="submitBtn" data-i18n="sig.btn">
+            <button type="button" class="create-button" id="submitBtn" data-i18n="sig.btn">
                 Create Account
             </button>
 
@@ -381,5 +381,33 @@ byId("signupForm").addEventListener("submit", (e) => {
     location.href = "login.html?created=1";
 });
     </script>
+function handleSignupForm() {
+    const name = document.getElementById("name") ? document.getElementById("name").value : "";
+    const email = document.getElementById("email") ? document.getElementById("email").value : "";
+    const password = document.getElementById("password") ? document.getElementById("password").value : "";
+    const confirmPassword = document.getElementById("confirmPassword") ? document.getElementById("confirmPassword").value : "";
+    const errorEl = document.getElementById("error") || document.getElementById("pwMsg");
+
+    if (!name || !email || !password) {
+        if (errorEl) errorEl.textContent = "Please fill in all fields.";
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        if (errorEl) errorEl.textContent = "Passwords do not match.";
+        return;
+    }
+
+    // Tawagin ang function mula sa auth.js
+    const res = Auth.createUser(email, password, { name: name });
+
+    if (res && res.ok) {
+        alert("Account created successfully!");
+        window.location.replace("login.html");
+    } else {
+        if (errorEl) errorEl.textContent = (res && res.error) ? res.error : "Signup failed.";
+    }
+}
+
 </body>
 </html>
