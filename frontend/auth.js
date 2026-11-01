@@ -505,5 +505,28 @@
         }
     })();
 
+        function toggleSignupPassword(inputId, buttonId) {
+        const inputField = document.getElementById(inputId);
+        const eyeButton = document.getElementById(buttonId);
+        if (!inputField || !eyeButton) return;
+
+        const svg = eyeButton.querySelector('svg');
+
+        if (inputField.type === "password") {
+            inputField.type = "text";
+            const slashPath = document.createElementNS("http://w3.org", "path");
+            slashPath.setAttribute("id", buttonId + "-slash");
+            slashPath.setAttribute("d", "M2 2l20 20");
+            slashPath.setAttribute("stroke", "#444");
+            slashPath.setAttribute("stroke-width", "2");
+            svg.appendChild(slashPath);
+        } else {
+            inputField.type = "password";
+            const slashPath = document.getElementById(buttonId + "-slash");
+            if (slashPath) slashPath.remove();
+        }
+    }
+    window.toggleSignupPassword = toggleSignupPassword;
+
     
 })();
