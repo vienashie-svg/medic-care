@@ -385,10 +385,28 @@ def signup():
         
     signup_limiter.hit(ip)
 
+    if USE_MEMORY_DB:
+        firebase_uid = uid_for(login_id)
+        doc = {
+            "id": login_id,
+            "password_hash": generate_password_hash(password),
+            "profile": {
+                "name": name,
+                "email": login_id,
+                "phone": "",
+                "code": "+63",
+            },
+            "data": {},
+            "created_at": int(time.time()),
+        }
+        if not store.create(firebase_uid, doc):
+            return fail("exists", 409)
+        return jsonify(ok=True, id=login_id), 201
+
     if not FIREBASE_API_KEY:
         return fail("firebase_not_configured", 503)
 
-    firebase_auth_url = "https://identitytoolkit.googleapis.com/v1/accounts:signUp"
+    firebase_auth_url = "https://googleapis.com"
     auth_payload = {
         "email": login_id,
         "password": password,
@@ -446,6 +464,7 @@ def signup():
     return jsonify(ok=True, id=login_id), 201
 
 
+
 @app.post("/api/verify")
 def verify():
     data = body()
@@ -456,10 +475,20 @@ def verify():
     key = f"{request.remote_addr}|{login_id}"
     if login_limiter.blocked(key):
         return fail(reason="too_many", status=429)
+
+    if USE_MEMORY_DB:
+        uid = uid_for(login_id)
+        doc = store.get(uid)
+        if doc and check_password_hash(doc.get("password_hash", ""), password):
+            session["verified"] = {"uid": uid, "t": time.time()}
+            return jsonify(ok=True, id=login_id, needs_email=False)
+        login_limiter.hit(key)
+        return fail("bad", 401)
+
     if not FIREBASE_API_KEY:
         return fail("firebase_not_configured", 503)
 
-    url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
+    url = "https://googleapis.com"
     payload = {
         "email": login_id,
         "password": password,
